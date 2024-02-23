@@ -14,7 +14,8 @@
 #include <sstream>
 
 /**
- * A Defect at a moment in time, without history or future.
+ * A Defect at a moment in time, without history or future.  These are typically
+ * read from a single line in the file.
  * @param loc The location.
  * @param id The id.
  * @param charge The charge of the defect.
@@ -23,6 +24,7 @@
 class SnapDefect: public SpaceTemp {
 public:
     static const int NO_ID = std::numeric_limits<int>::max();
+    
     
     /**
      * The constructor.

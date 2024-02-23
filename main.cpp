@@ -45,15 +45,14 @@ void chart(std::function<int(double, int)> func,
 
 int main(int argc, char** argv) {
 
-//    DefectManager dm("PlusAndMinusTM.csv");
-//    dm.pairDefects(5, 3);//dist, time
+    DefectManager dm("PlusAndMinusTM.csv");
+    dm.pairDefects();//dist, time
     
-//    cout << dm;
     
-//    cout << "spouse: " << dm.count(DefectManager::Relationship::SPOUSE) << endl;
-//    cout << "twin: " << dm.count(DefectManager::Relationship::TWIN) << endl;
-//    cout << "both: " << dm.count(DefectManager::Relationship::SPOUSE_AND_TWIN)<< endl;
-//    cout << "Num defects = " << dm.count(DefectManager::Relationship::ALL)<< endl;
+    cout << "spouse: " << dm.countPos(DefectManager::Relationship::SPOUSE) << endl;
+    cout << "twin: " << dm.countPos(DefectManager::Relationship::TWIN) << endl;
+    cout << "both: " << dm.countPos(DefectManager::Relationship::SPOUSE_AND_TWIN)<< endl;
+    cout << "Num defects = " << dm.countPos(DefectManager::Relationship::ALL)<< endl;
     
 //    
 //    chart([&dm](double dist, int time){
@@ -61,12 +60,6 @@ int main(int argc, char** argv) {
 //        return dm.count(DefectManager::Relationship::SPOUSE);
 //    }, 1, 10, 1, 1, 10, 1, std::cout);
 //    
-    
-    std::vector<double> vec = {1, 2, 3};
-    
-    StatisticalTools<std::vector<double>::iterator> tool(vec.begin(), vec.end());
-    
-    cout<< tool.variance([](double x){return 2*x;});
     
     return 0;
 }

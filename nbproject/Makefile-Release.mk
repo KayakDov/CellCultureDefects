@@ -36,7 +36,6 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 # Object Files
 OBJECTFILES= \
 	${OBJECTDIR}/Defect.o \
-	${OBJECTDIR}/DefectIter.o \
 	${OBJECTDIR}/DefectManager.o \
 	${OBJECTDIR}/Loc.o \
 	${OBJECTDIR}/SnapDefect.o \
@@ -72,11 +71,6 @@ ${OBJECTDIR}/Defect.o: Defect.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -O2 -std=c++14 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Defect.o Defect.cpp
-
-${OBJECTDIR}/DefectIter.o: DefectIter.cpp
-	${MKDIR} -p ${OBJECTDIR}
-	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -std=c++14 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/DefectIter.o DefectIter.cpp
 
 ${OBJECTDIR}/DefectManager.o: DefectManager.cpp
 	${MKDIR} -p ${OBJECTDIR}

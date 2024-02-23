@@ -5,7 +5,6 @@
                    displayName="Header Files"
                    projectFiles="true">
       <itemPath>Defect.h</itemPath>
-      <itemPath>DefectIter.h</itemPath>
       <itemPath>DefectManager.h</itemPath>
       <itemPath>Loc.h</itemPath>
       <itemPath>SnapDefect.h</itemPath>
@@ -20,7 +19,6 @@
                    displayName="Source Files"
                    projectFiles="true">
       <itemPath>Defect.cpp</itemPath>
-      <itemPath>DefectIter.cpp</itemPath>
       <itemPath>DefectManager.cpp</itemPath>
       <itemPath>Loc.cpp</itemPath>
       <itemPath>SnapDefect.cpp</itemPath>
@@ -55,10 +53,6 @@
       <item path="Defect.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="Defect.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="DefectIter.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="DefectIter.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DefectManager.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -105,10 +99,6 @@
       <item path="Defect.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="Defect.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="DefectIter.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="DefectIter.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DefectManager.cpp" ex="false" tool="1" flavor2="0">
       </item>

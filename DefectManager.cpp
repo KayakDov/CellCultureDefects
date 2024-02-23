@@ -10,12 +10,12 @@
 
 Defect* DefectManager::getPair(const Defect& lonely, std::unordered_set<Defect*>& eligibles, const bool birth, double dist, int time) const {
     //TODO: There is no precaution yet taken in case the other baby/recently deceased already has a partner.
-    
-    
+
+
     Defect* closest = nullptr;
-    for (Defect* eligible : eligibles){
-        if (lonely.near(eligible->snapShot(birth), dist, time) && 
-                (closest == nullptr 
+    for (Defect* eligible : eligibles) {
+        if (lonely.near(eligible->snapShot(birth), dist, time) &&
+                (closest == nullptr
                 || closest->sTDist(lonely) > eligible->sTDist(lonely)))
             closest = eligible;
     }
@@ -28,7 +28,7 @@ Defect* DefectManager::getPair(const Defect& lonely, std::unordered_set<Defect*>
 }
 
 bool DefectManager::isNewDefect(const SnapDefect& sd) const {
-    return posDefects.find(sd.getID()) == posDefects.end();
+    return sd.getID() >= (sd.getCharge() ? posDefects : negDefects).size();
 }
 
 std::ifstream DefectManager::reader() const {
@@ -57,32 +57,24 @@ void DefectManager::loadDefects() {
     forEachLine([this](const SnapDefect & sd) {
         endTime++;
         if (sd.isTracked()) {
-            if (isNewDefect(sd)) (sd.getCharge() ? posDefects : negDefects)
-                    .emplace(sd.getID(), new Defect(sd));
-            else posDefects.find(sd.getID())->second->copy(sd);
+            std::vector<Defect*>& defects = sd.getCharge() ? posDefects : negDefects;
+            if (isNewDefect(sd))  defects.push_back(new Defect(sd));
+             else defects[sd.getID()]->copy(sd);
             }
     });
-
 }
 
 void DefectManager::pairDefects(double dist, int time) {
-    if (posDefects.size() == 0 && negDefects.size() == 0) loadDefects();
-    else clearPairing();
+    clearPairing();
+    loadDefects();
+    setThresholds(dist, time);
 
-    std::unordered_set<Defect*> births;
-    std::unordered_set<Defect*> deaths;
-    births.reserve(negDefects.size());
-    deaths.reserve(negDefects.size());
-    for (auto pair : negDefects) {
-        Defect& nd = *(pair.second);
-        if (nd.birthSnap().getTime() > time) births.insert(&nd);
-        if (endTime - nd.getTime() > time) deaths.insert(&nd);
-    }
+    std::unordered_set<Defect*> possibleBirths(negDefects.begin(), negDefects.end());
+    std::unordered_set<Defect*> possibleDeaths = possibleBirths;
 
-    for (const auto& pair : posDefects) {
-        Defect& lonely = *(pair.second);
-        lonely.setTwin(getPair(lonely.birthSnap(), births, true, dist, time));
-        lonely.setSpouse(getPair(lonely, deaths, false, dist, time));
+    for (Defect* lonely : posDefects) {
+        lonely->setTwin(getPair(lonely->birthSnap(), possibleBirths, true, dist, time));
+        lonely->setSpouse(getPair(*lonely, possibleDeaths, false, dist, time));
     }
 }
 
@@ -94,12 +86,17 @@ DefectManager::~DefectManager() {
     clearDefects();
 }
 
+void DefectManager::setThresholds(int time, int dist) {
+    this-> timeThreshold = time;
+    this-> distThreshold = dist;
+}
+
 std::ostream& operator<<(std::ostream& os, const DefectManager& dm) {
-    for (auto iter = dm.posDefects.begin(); iter != dm.posDefects.end(); iter++) {
-        bool spouse = iter->second->hasSpouse(), twin = iter->second->hasTwin();
-        if (spouse || twin) os << iter -> second -> getID() << " has: \n";
-        if (spouse) os << " spouse: " << iter->second->getSpouse() << "\n";
-        if (twin) os << " twin: " << iter->second->getTwin() << "\n";
+    for (Defect* defect : dm.posDefects) {
+        bool spouse = defect->hasSpouse(), twin = defect->hasTwin();
+        if (spouse || twin) os << defect -> getID() << " has: \n";
+        if (spouse) os << " spouse: " << defect->getSpouse() << "\n";
+        if (twin) os << " twin: " << defect->getTwin() << "\n";
 
     }
     return os;
@@ -151,22 +148,24 @@ double DefectManager::percentTracked() const {
     return (double) tracked / (tracked + untracked);
 }
 
-int DefectManager::count(const Relationship& rel) const {
+int DefectManager::countPos(const Relationship& rel) const {
     int num = 0;
-    for (const auto& pair : posDefects) {
+    for (Defect* def : posDefects) {
         bool add = false;
-        Defect& def = *pair.second;
+
         switch (rel) {
-            case Relationship::SPOUSE: add = def.hasSpouse();
+            case Relationship::SPOUSE: add = def->hasSpouse();
                 break;
-            case Relationship::TWIN: add = def.hasTwin();
+            case Relationship::TWIN: add = def->hasTwin();
                 break;
-            case Relationship::SPOUSE_AND_TWIN: add = def.hasTwin() && def.hasSpouse();
+            case Relationship::SPOUSE_AND_TWIN: add = def->hasTwin() && def->hasSpouse();
                 break;
-            case Relationship::NONE: add = !def.hasSpouse() && !def.hasTwin();
+            case Relationship::NONE: add = !def->hasSpouse() && !def->hasTwin();
                 break;
             case Relationship::ALL: add = true;
+                break;
         }
+
         if (add) num++;
 
     }
@@ -174,13 +173,14 @@ int DefectManager::count(const Relationship& rel) const {
 }
 
 void DefectManager::clearDefects() {
-    for (auto& pair : posDefects) delete pair.second;
-    for (auto& pair : negDefects) delete pair.second;
+    for (auto& defect : posDefects) delete defect;
+    for (auto& defect : negDefects) delete defect;
     posDefects.clear();
     negDefects.clear();
 }
 
 void DefectManager::clearPairing() {
-    for (auto& pair : posDefects) pair.second->clearPairs();
-    for (auto& pair : negDefects) pair.second->clearPairs();
+    for (auto& defect : posDefects) defect->clearPairs();
+    for (auto& defect : negDefects) defect->clearPairs();
 }
+
