@@ -11,6 +11,14 @@
 using namespace std;
 /**
  * Prints a chart that is the output of the function.
+ * 
+ * For example:   
+ * chart([&dm](double dist, int time){
+ *      dm.pairDefects(dist, time);
+ *      return dm.count(DefectManager::Relationship::SPOUSE);
+ * }, 1, 10, 1, 1, 10, 1, std::cout);
+ *     
+ * 
  * @param func The functions from (int, double) -> int whose output will be 
  * printed.
  * @param startT The first int value.
@@ -46,20 +54,11 @@ void chart(std::function<int(double, int)> func,
 int main(int argc, char** argv) {
 
     DefectManager dm("PlusAndMinusTM.csv");
-    dm.pairDefects();//dist, time
+   
+    dm.loadDefects();
     
-    
-    cout << "spouse: " << dm.countPos(DefectManager::Relationship::SPOUSE) << endl;
-    cout << "twin: " << dm.countPos(DefectManager::Relationship::TWIN) << endl;
-    cout << "both: " << dm.countPos(DefectManager::Relationship::SPOUSE_AND_TWIN)<< endl;
-    cout << "Num defects = " << dm.countPos(DefectManager::Relationship::ALL)<< endl;
-    
-//    
-//    chart([&dm](double dist, int time){
-//        dm.pairDefects(dist, time);
-//        return dm.count(DefectManager::Relationship::SPOUSE);
-//    }, 1, 10, 1, 1, 10, 1, std::cout);
-//    
-    
+    for(Defect* defect: dm.all())
+        cout << defect->getCharge();
+        
     return 0;
 }

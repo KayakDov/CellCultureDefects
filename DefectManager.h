@@ -14,22 +14,55 @@
 #include "Defect.h"
 #include "Loc.h"
 #include <stdexcept>
-#include <fstream>
 #include <functional>
 #include <unordered_set>
 #include <vector>
-
+#include <iterator>
 /**
  * This class creates and tracks defects.
  */
 class DefectManager {
 public:
-
+    
+    /**
+     * An iterator that goes through all the defects.
+     */
+    class DefectIterator : public std::iterator<std::forward_iterator_tag, Defect*> {
+    public:
+        using iterator = std::vector<Defect*>::iterator;
+        
+        DefectIterator(DefectManager& dm);
+        static DefectIterator end(DefectManager& dm);
+        DefectIterator& operator++();
+        Defect* operator*() const;
+        bool operator==(const DefectIterator& other) const;
+        bool operator!=(const DefectIterator& other) const;
+        private:
+        iterator posIter, negIter, posIterEnd;
+        DefectIterator(iterator posIter, iterator negIter, iterator posIterEnd);
+    };
+    friend DefectIterator;
+    
+    /**
+     * A class that lets you iterate through all the defects.
+     */
+    class AllDefects{
+    public:
+        AllDefects(DefectManager& dm);
+        DefectManager::DefectIterator begin();
+        DefectManager::DefectIterator end();
+        
+    private:
+        DefectManager& dm;
+    };
+    
+    DefectManager::AllDefects all();
+    
     /**
      * Recomended defaault values for cells based on experimental observations.
      */
     static constexpr int DEFAULT_DIST_THRESH = 40, DEFAULT_TIME_THRESH = 4;
-    
+
 
     /**
      * The constructor.  This method will iterate thought the proffered file, and 
@@ -65,39 +98,52 @@ public:
      * @param distThreshold The distance required between two births or deaths for
      */
     void pairDefects(double distThreshold = DEFAULT_DIST_THRESH, int timeThreshold = DEFAULT_TIME_THRESH);
-    
+
     /**
      * Without changing the file, it is replaced for this object by an identical 
      * one without untracked defects.
      */
     void removeFromFileUntrackedDefects();
-    
+
     /**
      * The percentage of lines that are tracked defects.
      * @return The percentage of lines that are tracked defects.
      */
     double percentTracked() const;
-    
-    
-    enum class Relationship {SPOUSE, TWIN, SPOUSE_AND_TWIN, NONE, ALL, ELIGIBLE};
+
+    enum class Relationship {
+        SPOUSE, TWIN, SPOUSE_AND_TWIN, NONE, ALL, ELIGIBLE
+    };
     /**
      * The number of a type of defect.
      * @return The number of paired defects.
      */
     int countPos(const Relationship& rel) const;
-    
+
     /**
      * The average life span of the defects.
      * @return The average life span of the defects.
      */
     double averageLifeSpan() const;
-    
+
     /**
      * The standard deviation of the lifespan of the defects.
      * @return 
      */
     double standardDeviationLifeSpan() const;
-    
+
+    /**
+     * The number of positive defects.
+     * @return The number of positive defects.
+     */
+    int numPositiveDefect() const;
+
+    /**
+     * The number of negative defects.
+     * @return The number of negative defects.
+     */
+    int numNegativeDefects() const;
+
 private:
     std::vector<Defect*> posDefects, negDefects;
     std::string fileName;
@@ -132,38 +178,38 @@ private:
      * @param dist The new distance threshold.
      */
     void setThresholds(int time, int dist);
-    
-    
+
+
     /**
      * Offers up a prepared reader for the file, assuming the file is formatted 
      * correctly.
      * @return A reader for the file.
      */
     std::ifstream reader() const;
-    
+
     /**
      * The number of lines in the file.
      * @return The number of lines in the file.
      */
     int fileLength() const;
-    
+
     /**
      * Clears stored defects and frees up memory.
      */
     void clearDefects();
-    
+
     /**
      * Clears all spouses and twins.
      */
     void clearPairing();
-    
-    
+
+
     /**
      * Sets a new file.  This clears the defects and endTime.
      * @param fileName The name of the new file.
      */
     void setFile(const std::string& fileName);
-    
+
 };
 
 #endif /* DEFECTMANAGER_H */
