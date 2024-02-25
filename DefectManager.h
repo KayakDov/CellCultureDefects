@@ -17,31 +17,15 @@
 #include <functional>
 #include <unordered_set>
 #include <vector>
-#include <iterator>
+#include "TwoIters.h"
 /**
  * This class creates and tracks defects.
  */
 class DefectManager {
 public:
     
-    /**
-     * An iterator that goes through all the defects.
-     */
-    class DefectIterator : public std::iterator<std::forward_iterator_tag, Defect*> {
-    public:
-        using iterator = std::vector<Defect*>::iterator;
-        
-        DefectIterator(DefectManager& dm);
-        static DefectIterator end(DefectManager& dm);
-        DefectIterator& operator++();
-        Defect* operator*() const;
-        bool operator==(const DefectIterator& other) const;
-        bool operator!=(const DefectIterator& other) const;
-        private:
-        iterator posIter, negIter, posIterEnd;
-        DefectIterator(iterator posIter, iterator negIter, iterator posIterEnd);
-    };
-    friend DefectIterator;
+    
+    friend ::TwoDefectIters;
     
     /**
      * A class that lets you iterate through all the defects.
@@ -49,13 +33,20 @@ public:
     class AllDefects{
     public:
         AllDefects(DefectManager& dm);
-        DefectManager::DefectIterator begin();
-        DefectManager::DefectIterator end();
+        TwoDefectIters begin();
+        TwoDefectIters end();
         
     private:
         DefectManager& dm;
     };
     
+    /**
+     * An iterator for all the defects.  Use as follows:
+     * for(Defect* defect: dm.all())
+        cout << defect->getCharge();
+     * 
+     * @return An iterator for all the defects.
+     */
     DefectManager::AllDefects all();
     
     /**

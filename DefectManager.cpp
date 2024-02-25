@@ -192,43 +192,12 @@ int DefectManager::numNegativeDefects() const{
     return negDefects.size();
 }
 
-DefectManager::DefectIterator::DefectIterator(DefectManager& dm)
-: DefectIterator(dm.posDefects.begin(), dm.negDefects.begin(), dm.posDefects.end()){}
-
-
-
-
-DefectManager::DefectIterator& DefectManager::DefectIterator::operator++(){
-    ++(posIter != posIterEnd? posIter: negIter);
-    return *this;
+TwoDefectIters DefectManager::AllDefects::begin(){
+    return TwoDefectIters(dm.posDefects.begin(), dm.negDefects.begin(), dm.posDefects.end());
 }
 
-Defect* DefectManager::DefectIterator::operator*() const{
-    return *(posIter!= posIterEnd? posIter:negIter);
-}
-
-bool DefectManager::DefectIterator::operator==(const DefectIterator& other) const{
-    return other.posIter == posIter && other.negIter == negIter;
-}
-
-bool DefectManager::DefectIterator::operator!=(const DefectIterator& other) const{
-    return !(other == *this);
-}
-
-DefectManager::DefectIterator::DefectIterator(iterator posIter, iterator negIter, iterator posIterEnd)
-:posIter(posIter), negIter(negIter), posIterEnd(posIterEnd){}
-
-DefectManager::DefectIterator DefectManager::DefectIterator::end(DefectManager& dm) {
-    return DefectIterator(dm.posDefects.end(), dm.negDefects.end(), dm.posDefects.end());
-}
-
-
-DefectManager::DefectIterator DefectManager::AllDefects::begin(){
-    return DefectManager::DefectIterator(dm);
-}
-
-DefectManager::DefectIterator DefectManager::AllDefects::end(){
-    return DefectIterator::end(dm);
+TwoDefectIters DefectManager::AllDefects::end(){
+    return TwoDefectIters::end(dm.posDefects.end(), dm.negDefects.end());
 }
 
 DefectManager::AllDefects::AllDefects(DefectManager& dm): dm(dm){};

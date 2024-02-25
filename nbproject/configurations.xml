@@ -10,6 +10,7 @@
       <itemPath>SnapDefect.h</itemPath>
       <itemPath>SpaceTemp.h</itemPath>
       <itemPath>StatisticalTools.h</itemPath>
+      <itemPath>TwoIters.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -23,6 +24,7 @@
       <itemPath>Loc.cpp</itemPath>
       <itemPath>SnapDefect.cpp</itemPath>
       <itemPath>SpaceTemp.cpp</itemPath>
+      <itemPath>TwoIters.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
@@ -72,6 +74,10 @@
       </item>
       <item path="StatisticalTools.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="TwoIters.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="TwoIters.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">
       </item>
     </conf>
@@ -117,6 +123,10 @@
       <item path="SpaceTemp.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="StatisticalTools.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="TwoIters.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="TwoIters.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">
       </item>

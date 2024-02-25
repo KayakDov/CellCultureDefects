@@ -40,6 +40,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/Loc.o \
 	${OBJECTDIR}/SnapDefect.o \
 	${OBJECTDIR}/SpaceTemp.o \
+	${OBJECTDIR}/TwoIters.o \
 	${OBJECTDIR}/main.o
 
 
@@ -91,6 +92,11 @@ ${OBJECTDIR}/SpaceTemp.o: SpaceTemp.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -O2 -std=c++14 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/SpaceTemp.o SpaceTemp.cpp
+
+${OBJECTDIR}/TwoIters.o: TwoIters.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -O2 -std=c++14 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/TwoIters.o TwoIters.cpp
 
 ${OBJECTDIR}/main.o: main.cpp
 	${MKDIR} -p ${OBJECTDIR}
