@@ -6,6 +6,7 @@
                    projectFiles="true">
       <itemPath>Defect.h</itemPath>
       <itemPath>DefectManager.h</itemPath>
+      <itemPath>Filter.h</itemPath>
       <itemPath>Loc.h</itemPath>
       <itemPath>SnapDefect.h</itemPath>
       <itemPath>SpaceTemp.h</itemPath>
@@ -21,6 +22,7 @@
                    projectFiles="true">
       <itemPath>Defect.cpp</itemPath>
       <itemPath>DefectManager.cpp</itemPath>
+      <itemPath>Filter.cpp</itemPath>
       <itemPath>Loc.cpp</itemPath>
       <itemPath>SnapDefect.cpp</itemPath>
       <itemPath>SpaceTemp.cpp</itemPath>
@@ -59,6 +61,10 @@
       <item path="DefectManager.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="DefectManager.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Filter.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Filter.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="Loc.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -109,6 +115,10 @@
       <item path="DefectManager.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="DefectManager.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Filter.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Filter.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="Loc.cpp" ex="false" tool="1" flavor2="0">
       </item>

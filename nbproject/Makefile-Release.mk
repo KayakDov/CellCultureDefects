@@ -37,6 +37,7 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 OBJECTFILES= \
 	${OBJECTDIR}/Defect.o \
 	${OBJECTDIR}/DefectManager.o \
+	${OBJECTDIR}/Filter.o \
 	${OBJECTDIR}/Loc.o \
 	${OBJECTDIR}/SnapDefect.o \
 	${OBJECTDIR}/SpaceTemp.o \
@@ -77,6 +78,11 @@ ${OBJECTDIR}/DefectManager.o: DefectManager.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -O2 -std=c++14 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/DefectManager.o DefectManager.cpp
+
+${OBJECTDIR}/Filter.o: Filter.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -O2 -std=c++14 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Filter.o Filter.cpp
 
 ${OBJECTDIR}/Loc.o: Loc.cpp
 	${MKDIR} -p ${OBJECTDIR}
