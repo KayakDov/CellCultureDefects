@@ -1,29 +1,21 @@
 package creationfusion;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.function.Predicate;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -35,6 +27,7 @@ public class DefectManager {
 
     private List<Defect> posDefects, negDefects;
     private String fileName;
+    private FileFormat fileFormat;
     private int timeThreshold;
     double distThreshold;
     private int endTime = -1;
@@ -43,11 +36,22 @@ public class DefectManager {
      * Constructs a DefectManager with the specified file name.
      *
      * @param fileName The name of the file containing defect data.
+     * @param fileFormat The format of the file.
+     */
+    public DefectManager(String fileName, FileFormat fileFormat) {
+        this.negDefects = Collections.synchronizedList(new ArrayList<>());
+        this.posDefects = Collections.synchronizedList(new ArrayList<>());
+        this.fileName = fileName;
+        this.fileFormat = fileFormat;
+    }
+
+    /**
+     * Constructs a DefectManager with the specified file name.
+     *
+     * @param fileName The name of the file containing defect data.
      */
     public DefectManager(String fileName) {
-        this.negDefects = Collections.synchronizedList(new ArrayList<Defect>());
-        this.posDefects = Collections.synchronizedList(new ArrayList<Defect>());
-        this.fileName = fileName;
+        this(fileName, FileFormat.DEFAULT);
     }
 
     /**
@@ -70,30 +74,28 @@ public class DefectManager {
     public void setAbsences() {
 
         fileStream()
-                .map(line -> SnapDefect.fromLine(line))
+                .map(line -> fileFormat.snapDefect(line))
                 .filter(SnapDefect::isTracked)
+                .filter(sd -> !addDefect(sd))
                 .forEachOrdered(sd -> {
 
-                    List<Defect> defects = defects(sd.getCharge());
+                    Defect def = getDefect(sd);
 
-                    if (!addDefect(sd)) {
+                    if (sd.getTime() == def.getBirth().getTime())
+                        def.resetDeath();
 
-                        Defect def = defects.get(sd.getID());
-
-                        if (sd.getTime() == def.getBirth().getTime())
-                            def.resetDeath();
-
-                        else {
-                            int absence = sd.getTime() - def.getDeath().getTime() - 1;
-                            if (absence > 0) def.addToTimeAWOL(absence);
-                            def.update(sd);
-                        }
+                    else {
+                        int absence = sd.getTime() - def.getDeath().getTime() - 1;
+                        if (absence > 0) def.addToTimeAWOL(absence);
+                        def.update(sd);
                     }
+
                 });
     }
 
     /**
-     * Checks if each defect is stored correctly according to its index.
+     * An internal integrity check method. Checks if each defect is stored
+     * correctly according to its index.
      *
      * @return True if each index is stored correctly according to its index.
      * False otherwise.
@@ -113,6 +115,7 @@ public class DefectManager {
      * Checks that no indices in the file are skipped, and prints new indices as
      * they appear.
      *
+     * @param charge The charge for which order of appearance is presented.
      * @return True if no indices in the file are skipped.
      */
     public List<Integer> orderOfApearence(boolean charge) {
@@ -120,11 +123,10 @@ public class DefectManager {
         HashSet<Integer> defects = new HashSet<>(posDefects.size() + negDefects.size());
         ArrayList<Integer> orderOfAppearence = new ArrayList<>(defects(charge).size());
 
-        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
-            String line = br.readLine();
+        try (FileFormat.Reader br = fileFormat.getReader(fileName)) {
+            SnapDefect sd;
 
-            while ((line = br.readLine()) != null) {
-                SnapDefect sd = SnapDefect.fromLine(line);
+            while ((sd = br.readSnapDefect()) != null) {
 
                 if (sd.isTracked() && sd.getCharge() == charge && !defects.contains(sd.getID())) {
                     defects.add(sd.getID());
@@ -134,10 +136,10 @@ public class DefectManager {
 
             return orderOfAppearence;
 
-        } catch (IOException e) {
-            System.err.println("Error reading the file: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
+        } catch (IOException ex) {
+            Logger.getLogger(DefectManager.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
+        } 
     }
 
     /**
@@ -148,16 +150,16 @@ public class DefectManager {
      * preceding first appearance.
      */
     public long outOfOrder() {
-        List<Integer> ooap = orderOfApearence(true);
+        List<Integer> ooaPos = orderOfApearence(true);
 
-        long count = IntStream.range(1, ooap.size())
-                .filter(i -> ooap.get(i) != ooap.get(i - 1))
+        long count = IntStream.range(1, ooaPos.size())
+                .filter(i -> !Objects.equals(ooaPos.get(i), ooaPos.get(i - 1)))
                 .count();
 
-        List<Integer> ooam = orderOfApearence(false);
+        List<Integer> ooaNeg = orderOfApearence(false);
 
-        count += IntStream.range(1, ooam.size())
-                .filter(i -> ooam.get(i) != ooam.get(i - 1)).count();
+        count += IntStream.range(1, ooaNeg.size())
+                .filter(i -> !Objects.equals(ooaNeg.get(i), ooaNeg.get(i - 1))).count();
 
         return count;
 
@@ -167,6 +169,8 @@ public class DefectManager {
      * Adds a defect to the appropriate container.
      *
      * @param sd The defect to be added.
+     * @return True if the defect was added, false if the defect already
+     * existed.
      */
     private boolean addDefect(SnapDefect sd) {
         List<Defect> defects = defects(sd.getCharge());
@@ -179,23 +183,17 @@ public class DefectManager {
     }
 
     /**
-     * Takes in a bunch of lines and adds the defects to this manager.
+     * Loads defects from the specified file.  Sets their birthday and deathdays,
+     * but does not set partners, angles, or distances.
      *
-     * @param snaps The formated lines of the file.
      */
-    private void AddSnapDefects(Stream<SnapDefect> snaps) {
-        snaps.filter(SnapDefect::isTracked)
+    public void loadDefects() {
+
+        fileStream().parallel()
+                .map(line -> fileFormat.snapDefect(line))
+                .filter(SnapDefect::isTracked)
                 .filter(sd -> !addDefect(sd))
-                .forEach(sd -> defects(sd.getCharge()).get(sd.getID()).update(sd));
-    }
-
-    /**
-     * Loads defects from the specified file.
-     *
-     */
-    public void loadDefectsForPairing() {
-
-        AddSnapDefects(fileStream().parallel().map(line -> SnapDefect.fromLine(line)));
+                .forEach(sd -> getDefect(sd).update(sd));
 
     }
 
@@ -207,6 +205,16 @@ public class DefectManager {
     }
 
     /**
+     * Creates a set of all the stored defects with the given charge.
+     * @return A set of all the stored defects with teh given chagre.
+     */
+    private Set<Defect> concurrentSet(boolean charge) {
+        Set<Defect> set = new ConcurrentHashMap<Defect, Integer>().keySet();
+        set.addAll(defects(charge));
+        return set;
+    }
+
+    /**
      * Pairs defects based on proximity and time thresholds.
      *
      * @param dist The distance threshold for pairing defects.
@@ -215,7 +223,7 @@ public class DefectManager {
     public void pairDefects(double dist, int time) {
         clearPairing();
 
-        if (posDefects.isEmpty()) loadDefectsForPairing();
+        if (posDefects.isEmpty()) loadDefects();
 
         setThresholds(time, dist);
 
@@ -239,10 +247,11 @@ public class DefectManager {
         if (endTime == -1)
             if (posDefects.isEmpty())
                 return endTime = fileStream().parallel()
-                        .map(line -> SnapDefect.fromLine(line))
-                        .mapToInt(sd -> sd.getTime()).max().getAsInt();
+                        .mapToInt(line -> fileFormat.time(line))
+                        .max().getAsInt();
             else
-                return endTime = all().mapToInt(def -> def.getDeath().getTime()).max().getAsInt();
+                return endTime = all()
+                        .mapToInt(def -> def.getDeath().getTime()).max().getAsInt();
 
         return endTime;
     }
@@ -255,16 +264,11 @@ public class DefectManager {
      */
     public double percentTracked() throws IOException {
         int untracked = 0, tracked = 0;
-        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+        try (FileFormat.Reader reader = fileFormat.getReader(fileName)) {
             String line;
-            while ((line = reader.readLine()) != null) {
-                SnapDefect sd = SnapDefect.fromLine(line);
-                if (sd.isTracked()) {
-                    tracked++;
-                } else {
-                    untracked++;
-                }
-            }
+            while ((line = reader.readLine()) != null)
+                if (fileFormat.isTracked(line)) tracked++;
+                else untracked++;
         }
         return (double) tracked / (tracked + untracked);
     }
@@ -361,26 +365,27 @@ public class DefectManager {
     }
 
     /**
-     * An iterator that reads directly from the file, one frame at a time
-     * for the given charge.
+     * An iterator that reads directly from the file, one frame at a time for
+     * the given charge.
      *
      * @param charge The charge of the desired frame.
-     * 
-     * @return An iterator that reads positively or negatively charged defects 
+     *
+     * @return An iterator that reads positively or negatively charged defects
      * directly from the file, one frame at a time.
      */
     public FrameIterator.ChargedFrameIterator frameIterator(boolean charge) {
-        return new FrameIterator.ChargedFrameIterator(fileName, charge);
+        return new FrameIterator.ChargedFrameIterator(fileName, fileFormat, charge);
     }
-    
+
     /**
      * An iterator that reads directly from the file, one frame at a time.
-     *     * 
+     *
+     *
      * @return An iterator that reads directly from the file, one frame at a
      * time.
      */
-    public FrameIterator frameIterator(){
-        return new FrameIterator(fileName);
+    public FrameIterator frameIterator() {
+        return new FrameIterator(fileName, fileFormat);
     }
 
     /**
@@ -445,22 +450,79 @@ public class DefectManager {
      * @return The total charge over the entire system from start to end.
      */
     public double cumulativeSystemCharge() {
+        if(posDefects.isEmpty()) loadDefects();
         return all()
                 .mapToDouble(defect -> defect.age() * (defect.getCharge() ? .5 : -.5))
                 .sum();
     }
-    
+
     /**
      * A stream of all the frames, created from an iterator going over the file.
+     *
      * @return A stream of all the frames.
      */
-    public Stream<Frame> frameStream(){
+    public Stream<Frame> frameStream() {
         return StreamSupport.stream(
                 Spliterators.spliterator(
                         frameIterator(), endTime, Spliterator.IMMUTABLE
                 ),
                 false
         );
+    }
+
+    /**
+     * Loads distances from partners. This should only be called if partners
+     * have already been loaded.
+     *
+     * @param maxTimeDistanceMonitored The amount of time from births and deaths
+     * that distances are monitored.
+     */
+    public void setDistances(int maxTimeDistanceMonitored) {
+        all().forEach(def -> def.prepForDistances(maxTimeDistanceMonitored));
+        
+        frameStream().parallel().forEach(frame -> setPartnerDistance(frame));
+    }
+
+    /**
+     * The defect for which the proffered SnapDefect is a moment of.
+     *
+     * @param sd For which the entire defect is desired.
+     * @return The defect for which the proffered SnapDefect is a moment of.
+     */
+    public Defect getDefect(SnapDefect sd) {
+        return defects(sd.getCharge()).get(sd.getID());
+    }
+
+    /**
+     * Sets the distance fir a positive defect at the spaceTime from it's partner.
+     * @param posDefect The defect for whom the distance is to be set.
+     * @param atTime The location of the defect at the time of the setting.
+     * @param frame The frame containing the defect at the given time and place.
+     * @param birth True if the twin's distance is desired, false for the spouse's.
+     */
+    private void setDistance(Defect posDefect, Loc loc, Frame frame, boolean birth) {
+        if (!posDefect.hasPartner(birth)) return;
+
+        Defect partner = posDefect.getPartner(birth);
+        
+        SnapDefect partnerSnap = frame.get(partner.getID(),partner.getCharge());
+
+        if (partnerSnap != null)
+            posDefect.setDistanceFrom(loc.dist(partnerSnap), frame.getTime(), birth);
+
+    }
+
+    /**
+     * Sets all partner distances for this frame.
+     *
+     * @param frame The frame from which partners are selected.
+     */
+    private void setPartnerDistance(Frame frame) {
+        frame.positives().filter(snap -> snap.isTracked()).forEach(posSnap -> {
+            Defect posDefect = getDefect(posSnap);
+            setDistance(posDefect, posSnap, frame, true);
+            setDistance(posDefect, posSnap, frame, false);
+        });
     }
 
 }

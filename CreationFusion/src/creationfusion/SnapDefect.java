@@ -38,35 +38,6 @@ public class SnapDefect extends SpaceTemp {
         this.charge = charge;
     }
 
-    
-    public final static int LABEL = 1, ID = 2, TRACK_ID = 3, QUALITY = 4, POSITION_X = 5, 
-        POSITION_Y = 6, POSITION_Z  = 7, POSITION_T = 8, FRAME = 9, RADIUS = 10,
-        VISIBILITY = 11, MANUAL_SPOT_COLOR = 12, MEAN_INTENSITY_CH1 = 13,
-        MEDIAN_INTENSITY_CH1 = 14, MIN_INTENSITY_CH1 = 15, MAX_INTENSITY_CH1 = 16,
-	TOTAL_INTENSITY_CH1 = 17, STD_INTENSITY_CH1 = 18, CONTRAST_CH1 = 19,
-        SNR_CH1 = 20, x_img = 21, y_img = 22, x_img1 = 23, y_img1 = 24, ang1 = 25,
-	ang2 = 26, ang3 = 27, chargeInd = 28;
-
-    
-    
-    
-    /**
-     * Parses a line from a line of a formated file constructs a SnapDefect from it.
-     * The line needs to be delineated by comas and the indices of its values
-     * must match the public final static ints above.
-     * @param line The formated line to be parsed.
-     * @return The snap defect generated from the line.
-     */
-    public static SnapDefect fromLine(String line) {
-        String[] split = line.split(",");
-        
-        double x = Double.parseDouble(split[x_img]);
-        double y = Double.parseDouble(split[y_img]);
-        int time = (int)Double.parseDouble(split[POSITION_T]);
-        boolean charge = Double.parseDouble(split[chargeInd]) > 0;
-        int ID = "".equals(split[TRACK_ID])?NO_ID:(int)Double.parseDouble(split[TRACK_ID]);
-        return new SnapDefect(x, y, time, ID, charge);
-    }
 
     /**
      * Gets the ID of this defect.
@@ -91,4 +62,33 @@ public class SnapDefect extends SpaceTemp {
     public boolean isTracked() {
         return id != NO_ID;
     }
+
+    
+    public boolean equals(SnapDefect sd) {
+        return sd.id == id && sd.getTime() == getTime() && sd.charge == charge;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime + id;
+        result = prime * result + getTime();
+        result = prime * result + (getCharge() ? 1231 : 1237);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        final SnapDefect other = (SnapDefect) obj;
+        if (this.id != other.id) return false;
+        return this.charge == other.charge && this.getTime() == other.getTime();
+    }
+
+    
+    
+    
 }

@@ -1,6 +1,7 @@
 package creationfusion;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -95,6 +96,24 @@ public class Defect {
      */
     public SpaceTemp get(boolean birth){
         return birth? getBirth():getDeath();
+    }
+    
+    /**
+     * Does this Defect have the desired partner?
+     * @param birth True to check for a twin, false to check for a spouse.
+     * @return True if the desired partner exists, false otherwise.
+     */
+    public boolean hasPartner(boolean birth){
+        return birth? hasTwin(): hasSpouse();
+    }
+    
+    /**
+     * The partner of this Defect if it exists, otherwise null.
+     * @param birth True for a twin, false for a spouse.
+     * @return The partner of this Defect.
+     */
+    public Defect getPartner(boolean birth){
+        return birth?getTwin():getSpouse();
     }
 
     /**
@@ -208,6 +227,7 @@ public class Defect {
         return getSpouse() == getTwin();
     }
     
+    
     /**
      * Prepares this defect to track the distances from its spouse and twin.
      * @param maxDistanceMonitoring The maximum amount of time the distance
@@ -216,30 +236,43 @@ public class Defect {
     public void prepForDistances(int maxDistanceMonitoring){
         distFromSpouse = new double[Math.min(maxDistanceMonitoring, age())];
         distFromTwin = new double[Math.min(maxDistanceMonitoring, age())];
+        Arrays.fill(distFromSpouse, Double.POSITIVE_INFINITY);
+        Arrays.fill(distFromTwin, Double.POSITIVE_INFINITY);
     }
     
     /**
-     * Sets the distance from the twin.
-     * @param dist The distance from the twin.
-     * @param frameNumber This is the time elapsed since the first frame.
-     * @return True The operation was a success.
+     * The set of distances from the twin or spouse.
+     * @param birth True for distances from twin, false for distances from spouse.
+     * @return The distances from the twin or spouse.
      */
-    public boolean setDistFromTwin(int dist, int frameNumber){
-        if(frameNumber > getDeath().getTime()) return false;
-        distFromTwin[frameNumber - getBirth().getTime()]= dist;
-        return true;
+    public double[] distanceFrom(boolean birth){
+        return birth?distFromTwin:distFromSpouse;
     }
     
-    
     /**
-     * Sets the distance from the spouse.
-     * @param dist The distance from the spouse.
-     * @param frameNumber This is the time elapsed since the first frame.
-     * @return The operation was a success.
+     * Sets the distance between this Defect and its partners at the given time.
+     * @param dist The distance.
+     * @param time The time.
+     * @param birth True to set distance for twins, false to set distance for \
+     * spouses.
      */
-    public boolean setDistFromSpouse(int dist, int frameNumber){
-        if(dist < getBirth().getTime()) return false;
-        distFromSpouse[getDeath().getTime() - frameNumber]= dist;
+    public void setDistanceFrom(double dist, int time, boolean birth){
+        setDistanceOneDir(dist, time, birth);
+        getPartner(birth).setDistanceOneDir(dist, time, birth);
+    }
+    /**
+     * Sets the distance from twin or spouse at the given time.  Does not set
+     * reciprocity.
+     * @param dist The distance.
+     * @param time The time.
+     * @param birth True for twin, false for spouse.
+     * @return true if the operation is a success, false if the time is to 
+     * distant from the birth or death.
+     */
+    private boolean setDistanceOneDir(double dist, int time, boolean birth){
+        int timeDist = Math.abs(time - get(birth).getTime());
+        if(timeDist >= distanceFrom(birth).length) return false;
+        distanceFrom(birth)[timeDist] = dist;
         return true;
     }
     
@@ -250,6 +283,10 @@ public class Defect {
      * @return The distance from the partner.
      */
     public double getDist(int timeFromEvent, boolean birth){
+        if(!hasPartner(birth) || timeFromEvent >= distanceFrom(birth).length) return Double.POSITIVE_INFINITY;
         return (birth?distFromTwin:distFromSpouse)[timeFromEvent];
     }
+    
+    
+    
 }
