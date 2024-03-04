@@ -1,10 +1,12 @@
 package creationfusion;
 
+import GeometricTools.Loc;
+import java.awt.Rectangle;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -61,7 +63,7 @@ public class DefectManager {
      */
     private Stream<String> fileStream() {
         try {
-            return Files.lines(Paths.get(fileName)).skip(1);
+            return Files.lines(Paths.get(fileName)).skip(1).filter(line -> fileFormat.inWindow(line));
         } catch (IOException ex) {
             Logger.getLogger(DefectManager.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException(ex);
@@ -69,7 +71,8 @@ public class DefectManager {
     }
 
     /**
-     * Has each defect track its absences.
+     * Has each defect track its absences. TODO: rewrite this to use latest
+     * tracking infrostructure.
      */
     public void setAbsences() {
 
@@ -82,12 +85,12 @@ public class DefectManager {
                     Defect def = getDefect(sd);
 
                     if (sd.getTime() == def.getBirth().getTime())
-                        def.resetDeath();
+                        def.resetBirthDeath();
 
                     else {
                         int absence = sd.getTime() - def.getDeath().getTime() - 1;
                         if (absence > 0) def.addToTimeAWOL(absence);
-                        def.update(sd);
+                        def.updateBirthDeath(sd);
                     }
 
                 });
@@ -139,7 +142,7 @@ public class DefectManager {
         } catch (IOException ex) {
             Logger.getLogger(DefectManager.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException(ex);
-        } 
+        }
     }
 
     /**
@@ -183,7 +186,7 @@ public class DefectManager {
     }
 
     /**
-     * Loads defects from the specified file.  Sets their birthday and deathdays,
+     * Loads defects from the specified file. Sets their birthday and deathdays,
      * but does not set partners, angles, or distances.
      *
      */
@@ -193,19 +196,20 @@ public class DefectManager {
                 .map(line -> fileFormat.snapDefect(line))
                 .filter(SnapDefect::isTracked)
                 .filter(sd -> !addDefect(sd))
-                .forEach(sd -> getDefect(sd).update(sd));
+                .forEach(sd -> getDefect(sd).updateBirthDeath(sd));
 
     }
 
     /**
      * Pairs the defects with the default thresholds for long eukaryotic cells.
      */
-    public void pairDefects() {
+    public void loadPairs() {
         pairDefects(SpaceTemp.defaultDistanceThreshold, SpaceTemp.defaultTimeThreshold);
     }
 
     /**
      * Creates a set of all the stored defects with the given charge.
+     *
      * @return A set of all the stored defects with teh given chagre.
      */
     private Set<Defect> concurrentSet(boolean charge) {
@@ -450,7 +454,7 @@ public class DefectManager {
      * @return The total charge over the entire system from start to end.
      */
     public double cumulativeSystemCharge() {
-        if(posDefects.isEmpty()) loadDefects();
+        if (posDefects.isEmpty()) loadDefects();
         return all()
                 .mapToDouble(defect -> defect.age() * (defect.getCharge() ? .5 : -.5))
                 .sum();
@@ -471,19 +475,6 @@ public class DefectManager {
     }
 
     /**
-     * Loads distances from partners. This should only be called if partners
-     * have already been loaded.
-     *
-     * @param maxTimeDistanceMonitored The amount of time from births and deaths
-     * that distances are monitored.
-     */
-    public void setDistances(int maxTimeDistanceMonitored) {
-        all().forEach(def -> def.prepForDistances(maxTimeDistanceMonitored));
-        
-        frameStream().parallel().forEach(frame -> setPartnerDistance(frame));
-    }
-
-    /**
      * The defect for which the proffered SnapDefect is a moment of.
      *
      * @param sd For which the entire defect is desired.
@@ -494,35 +485,19 @@ public class DefectManager {
     }
 
     /**
-     * Sets the distance fir a positive defect at the spaceTime from it's partner.
-     * @param posDefect The defect for whom the distance is to be set.
-     * @param atTime The location of the defect at the time of the setting.
-     * @param frame The frame containing the defect at the given time and place.
-     * @param birth True if the twin's distance is desired, false for the spouse's.
+     * Loads the life courses of each defect.
      */
-    private void setDistance(Defect posDefect, Loc loc, Frame frame, boolean birth) {
-        if (!posDefect.hasPartner(birth)) return;
-
-        Defect partner = posDefect.getPartner(birth);
+    public void loadLifeCourses() {
+        if(posDefects.isEmpty()) this.loadPairs();
         
-        SnapDefect partnerSnap = frame.get(partner.getID(),partner.getCharge());
-
-        if (partnerSnap != null)
-            posDefect.setDistanceFrom(loc.dist(partnerSnap), frame.getTime(), birth);
-
+        all().parallel().forEach(def -> def.prepForTracking());
+        
+        fileStream().parallel()
+                .map(line -> fileFormat.snapDefect(line))
+                .forEach(sd -> getDefect(sd).addLifeSnap(sd));
+                
     }
-
-    /**
-     * Sets all partner distances for this frame.
-     *
-     * @param frame The frame from which partners are selected.
-     */
-    private void setPartnerDistance(Frame frame) {
-        frame.positives().filter(snap -> snap.isTracked()).forEach(posSnap -> {
-            Defect posDefect = getDefect(posSnap);
-            setDistance(posDefect, posSnap, frame, true);
-            setDistance(posDefect, posSnap, frame, false);
-        });
-    }
+  
+    
 
 }

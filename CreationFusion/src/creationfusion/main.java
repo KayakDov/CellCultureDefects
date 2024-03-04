@@ -1,6 +1,6 @@
 package creationfusion;
 
-import StatisticalTools.StandardDeviation;
+import GeometricTools.Rectangle;
 import java.util.Arrays;
 import java.util.stream.DoubleStream;
 
@@ -14,13 +14,16 @@ public class main {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws InterruptedException {
-        DefectManager dm = new DefectManager("PlusAndMinusTM.csv");
+        DefectManager dm = new DefectManager(
+                "PlusAndMinusTM.csv", 
+                FileFormat.DEFAULT.setWindow(new Rectangle(900, 1800, 0, 900))
+        );
         
-        dm.pairDefects();
-        dm.setDistances(20);
+        dm.loadLifeCourses();
         
-        //TODO: The set distance function looks like it's getting a lot of bad values.
-        dm.all().forEach(defect -> System.out.println(Arrays.toString(Arrays.copyOf(defect.distanceFrom(true), 6))));
+        
+        dm.all().filter(defect -> defect.hasTwin() && !defect.hasSpouse())
+                .forEach(defect -> System.out.println(Arrays.toString(Arrays.copyOf(defect.distances(true), Math.min(defect.distances(true).length, 6)))));
 
     }
 

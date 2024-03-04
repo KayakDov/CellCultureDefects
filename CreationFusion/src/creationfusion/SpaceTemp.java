@@ -1,5 +1,7 @@
 package creationfusion;
 
+import GeometricTools.Loc;
+
 
 /**
  * Represents a point in space-time.

@@ -1,5 +1,6 @@
 package creationfusion;
 
+import GeometricTools.Rectangle;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -16,27 +17,29 @@ public class FileFormat {
      * Useless default indices.
      */
     public final static int LABEL = 1, ID = 2, QUALITY = 4, POSITION_X = 5,
-            POSITION_Y = 6, POSITION_Z = 7, RADIUS = 10,
+            POSITION_Y = 6, POSITION_Z = 7, FRAME = 9, RADIUS = 10,
             VISIBILITY = 11, MANUAL_SPOT_COLOR = 12, MEAN_INTENSITY_CH1 = 13,
             MEDIAN_INTENSITY_CH1 = 14, MIN_INTENSITY_CH1 = 15, MAX_INTENSITY_CH1 = 16,
             TOTAL_INTENSITY_CH1 = 17, STD_INTENSITY_CH1 = 18, CONTRAST_CH1 = 19,
-            SNR_CH1 = 20, x_img = 21, y_img = 22, FRAME = 9;
+            SNR_CH1 = 20, x_img1 = 23,
+            y_img1 = 24;
 
     /**
      * Useful default indices.
      */
-    public final static int TRACK_ID = 3, POSITION_T = 8, x_img1 = 23,
-            y_img1 = 24, ang1 = 25, ang2 = 26, ang3 = 27, CHARGE = 28;
+    public final static int TRACK_ID = 3, POSITION_T = 8, x_img = 21, 
+            y_img = 22, ang1 = 25, ang2 = 26, ang3 = 27, CHARGE = 28;
 
     private final static char DELINEATOR = ',';
 
     /**
      * An instance with the default file specs.
      */
-    public static FileFormat DEFAULT = new FileFormat(x_img1, y_img1, TRACK_ID, POSITION_T, CHARGE, DELINEATOR);
+    public static FileFormat DEFAULT = new FileFormat(x_img, y_img, TRACK_ID, POSITION_T, CHARGE, ang1, DELINEATOR, Rectangle.COORD_PLANE);
 
-    public final int x, y, id, time, charge;
+    public final int x, y, id, time, angle1, charge;
     public final char delineator;
+    private Rectangle window;
 
     /**
      * Sets the indices of the needed values in the file.
@@ -46,15 +49,20 @@ public class FileFormat {
      * @param id The index of the tracking id.
      * @param time The index of the time.
      * @param charge The index of the charge.
-     * @param delineator The delineator that seperates values.
+     * @param angle1 The index of the first angle.  For negative charges, 
+     * we assume angle 2 and 3 immediately follow angle 1.
+     * @param delineator The delineator that separates values.
+     * @param window The window within the file to be read.
      */
-    public FileFormat(int x, int y, int id, int time, int charge, char delineator) {
+    public FileFormat(int x, int y, int id, int time, int charge, int angle1, char delineator, Rectangle window) {
         this.x = x;
         this.y = y;
         this.id = id;
         this.time = time;
         this.charge = charge;
+        this.angle1 = angle1;
         this.delineator = delineator;
+        this.window = window;
     }
 
     /**
@@ -82,7 +90,7 @@ public class FileFormat {
      * @return The charge of the line.
      */
     public boolean chargeFrom(String line) {
-        return line.substring(line.lastIndexOf(delineator) + 1).equals("0.5");
+        return doubleAt(line, CHARGE) > 0;
     }
 
     /**
@@ -96,15 +104,34 @@ public class FileFormat {
     public SnapDefect snapDefect(String line) {
         if(line == null) return null;
         String[] split = line.split("" + delineator);
-
-        return new SnapDefect(
-                Double.parseDouble(split[x]),
-                Double.parseDouble(split[y]),
-                (int) Double.parseDouble(split[time]),
-                "".equals(split[id])
+        
+        double lineX = Double.parseDouble(split[x]);
+        double lineY = Double.parseDouble(split[y]);
+        int lineT = (int) Double.parseDouble(split[time]);
+        int lineID = "".equals(split[id])
                 ? SnapDefect.NO_ID
-                : (int) Double.parseDouble(split[id]),
-                Double.parseDouble(split[this.charge]) > 0);
+                : (int) Double.parseDouble(split[id]);
+        boolean lineCharge = Double.parseDouble(split[charge]) > 0;
+        double lineAng1 = Double.parseDouble(split[angle1]);
+        if(lineCharge) return new PositiveSnDefect(lineX, lineY, lineT, lineID, lineAng1);
+        
+        double lineAng2 = Double.parseDouble(split[angle1 + 1]);
+        double lineAng3 = Double.parseDouble(split[angle1 + 2]);
+        return new NegSnapDefect(lineX, lineY, lineT, lineID, lineAng1, lineAng2, lineAng3);
+    }
+
+    /**
+     * Resets the window.
+     * @param window 
+     * @return This file format.
+     */
+    public FileFormat setWindow(Rectangle window) {
+        this.window = window;
+        return this;
+    }
+    
+    public boolean inWindow(String line){
+        return window.contains(doubleAt(line, this.x), doubleAt(line, this.y));
     }
 
     /**
@@ -120,6 +147,15 @@ public class FileFormat {
     }
 
     /**
+     * The window of interest. Data outside this window should not be considered.
+     * @return The window of interest.
+     */
+    public Rectangle getWindow() {
+        return window;
+    }
+    
+    
+    /**
      * The index of the nth comma in the string after start.
      *
      * @param string The string for whom the index is desired.
@@ -133,6 +169,17 @@ public class FileFormat {
             if (string.charAt(i) == delineator) count++;
         return i;
     }
+    
+    /**
+     * Gets the double at the given index in the line.
+     * @param str The line.
+     * @param index The index of the formated line for the desired double.
+     * @return The value at the given index in the formated line.
+     */
+    private double doubleAt(String str, int index){
+        int startTerm = charCount(str, 0, index);
+        return Double.parseDouble(str.substring(startTerm + 1, charCount(str, startTerm, 1)));
+    }
 
     /**
      * Gets the time of the line.
@@ -141,8 +188,7 @@ public class FileFormat {
      * @return The time at the time index in the string.
      */
     public int time(String string) {
-        int startTime = charCount(string, 0, time);
-        return (int) Double.parseDouble(string.substring(startTime + 1, charCount(string, startTime + 1, 1)));
+        return (int) doubleAt(string, time);
     }
 
     
@@ -170,7 +216,9 @@ public class FileFormat {
                 return lastLine;
             }
             try {
-                return lastLine = super.readLine();
+                String tempLine = super.readLine();
+                while(!inWindow(tempLine)) tempLine = readLine();
+                return lastLine = tempLine;
             } catch (IOException ex) {
                 Logger.getLogger(Reader.class.getName()).log(Level.SEVERE, null, ex);
                 throw new RuntimeException(ex);

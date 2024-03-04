@@ -5,10 +5,9 @@ import java.util.Arrays;
 /**
  * Represents a snapshot of a defect at a moment in time.
  */
-public class SnapDefect extends SpaceTemp {
+public abstract class SnapDefect extends SpaceTemp {
 
     private final int id;
-    private final boolean charge;
     
     public final static int NO_ID = Integer.MAX_VALUE;
 
@@ -16,12 +15,10 @@ public class SnapDefect extends SpaceTemp {
      * Constructs a new SnapDefect instance with the specified location, ID, and charge.
      * @param loc The location of the defect.
      * @param id The ID of the defect.
-     * @param charge The charge of the defect.
      */
-    public SnapDefect(SpaceTemp loc, int id, boolean charge) {
+    public SnapDefect(SpaceTemp loc, int id) {
         super(loc);
         this.id = id;
-        this.charge = charge;
     }
     
     /**
@@ -30,12 +27,10 @@ public class SnapDefect extends SpaceTemp {
      * @param y The y value.
      * @param t The time value.
      * @param id The ID of the snap Defect.
-     * @param charge The charge of the snap defect.
      */
-    public SnapDefect(double x, double y, int t, int id, boolean charge){
+    public SnapDefect(double x, double y, int t, int id){
         super(x, y, t);
         this.id = id;
-        this.charge = charge;
     }
 
 
@@ -51,9 +46,7 @@ public class SnapDefect extends SpaceTemp {
      * Gets the charge of this defect.
      * @return true if the defect has a positive charge, false otherwise.
      */
-    public boolean getCharge() {
-        return charge;
-    }
+    public abstract boolean getCharge();
 
     /**
      * Checks if this defect is tracked (i.e., has an ID assigned).
@@ -65,7 +58,7 @@ public class SnapDefect extends SpaceTemp {
 
     
     public boolean equals(SnapDefect sd) {
-        return sd.id == id && sd.getTime() == getTime() && sd.charge == charge;
+        return sd.id == id && sd.getTime() == getTime() && sd.getCharge() == getCharge();
     }
 
     @Override
@@ -85,7 +78,7 @@ public class SnapDefect extends SpaceTemp {
         if (getClass() != obj.getClass()) return false;
         final SnapDefect other = (SnapDefect) obj;
         if (this.id != other.id) return false;
-        return this.charge == other.charge && this.getTime() == other.getTime();
+        return getCharge() == other.getCharge() && getTime() == other.getTime();
     }
 
     
