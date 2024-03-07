@@ -60,11 +60,7 @@ public class FrameIterator implements Iterator<Frame> {
             this.fileFormat = fileFormat;
             this.charge = charge;
             time = 0;
-            reader = fileFormat.getReader(fileName);
-            
-            while (reader.readCharge() != charge);
-            
-            reader.backOneLine();
+            reader = fileFormat.getReader(fileName).jumpToCharge(charge);
             
             hasNext = reader.ready();
 

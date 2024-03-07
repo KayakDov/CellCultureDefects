@@ -27,7 +27,7 @@ public class FileFormat {
     /**
      * Useful default indices.
      */
-    public final static int TRACK_ID = 3, POSITION_T = 8, x_img = 21, 
+    public final static int TRACK_ID = 3, POSITION_T = 8, x_img = 21,
             y_img = 22, ang1 = 25, ang2 = 26, ang3 = 27, CHARGE = 28;
 
     private final static char DELINEATOR = ',';
@@ -49,8 +49,8 @@ public class FileFormat {
      * @param id The index of the tracking id.
      * @param time The index of the time.
      * @param charge The index of the charge.
-     * @param angle1 The index of the first angle.  For negative charges, 
-     * we assume angle 2 and 3 immediately follow angle 1.
+     * @param angle1 The index of the first angle. For negative charges, we
+     * assume angle 2 and 3 immediately follow angle 1.
      * @param delineator The delineator that separates values.
      * @param window The window within the file to be read.
      */
@@ -82,6 +82,7 @@ public class FileFormat {
         }
     }
 
+
     /**
      * Finds the charge of the line, if the line is properly formatted.
      *
@@ -90,7 +91,20 @@ public class FileFormat {
      * @return The charge of the line.
      */
     public boolean chargeFrom(String line) {
-        return doubleAt(line, CHARGE) > 0;
+        return doubleAt(line, charge) > 0;
+    }
+    
+    /**
+     * The id of the line.
+     * @param line The line for which the ID is desired.
+     * @return The ID of the line.
+     */
+    public int IDFrom(String line){
+        try{
+        return (int)doubleAt(line, id);
+        }catch(NumberFormatException nfe){
+            return SnapDefect.NO_ID;
+        }
     }
 
     /**
@@ -102,9 +116,9 @@ public class FileFormat {
      * @return The snap defect generated from the line.
      */
     public SnapDefect snapDefect(String line) {
-        if(line == null) return null;
+        if (line == null) return null;
         String[] split = line.split("" + delineator);
-        
+
         double lineX = Double.parseDouble(split[x]);
         double lineY = Double.parseDouble(split[y]);
         int lineT = (int) Double.parseDouble(split[time]);
@@ -113,8 +127,9 @@ public class FileFormat {
                 : (int) Double.parseDouble(split[id]);
         boolean lineCharge = Double.parseDouble(split[charge]) > 0;
         double lineAng1 = Double.parseDouble(split[angle1]);
-        if(lineCharge) return new PositiveSnDefect(lineX, lineY, lineT, lineID, lineAng1);
-        
+        if (lineCharge)
+            return new PositiveSnDefect(lineX, lineY, lineT, lineID, lineAng1);
+
         double lineAng2 = Double.parseDouble(split[angle1 + 1]);
         double lineAng3 = Double.parseDouble(split[angle1 + 2]);
         return new NegSnapDefect(lineX, lineY, lineT, lineID, lineAng1, lineAng2, lineAng3);
@@ -122,15 +137,16 @@ public class FileFormat {
 
     /**
      * Resets the window.
-     * @param window 
+     *
+     * @param window
      * @return This file format.
      */
     public FileFormat setWindow(Rectangle window) {
         this.window = window;
         return this;
     }
-    
-    public boolean inWindow(String line){
+
+    public boolean inWindow(String line) {
         return window.contains(doubleAt(line, this.x), doubleAt(line, this.y));
     }
 
@@ -142,21 +158,22 @@ public class FileFormat {
      */
     public boolean isTracked(String line) {
         int first = charCount(line, 0, id);
-        return !line.substring(first + 1, charCount(line, first + 1, 1))
+        return !line.substring(first, charCount(line, first, 1) - 1)
                 .equals("");
     }
 
     /**
-     * The window of interest. Data outside this window should not be considered.
+     * The window of interest. Data outside this window should not be
+     * considered.
+     *
      * @return The window of interest.
      */
     public Rectangle getWindow() {
         return window;
     }
-    
-    
+
     /**
-     * The index of the nth comma in the string after start.
+     * The index immediately after the nth comma in the string after start.
      *
      * @param string The string for whom the index is desired.
      * @param start Where to start counting commas.
@@ -164,21 +181,26 @@ public class FileFormat {
      * @return The index of the nth comma in the string after start index.
      */
     private int charCount(String string, int start, int n) {
+        if (string == null)
+            throw new NullPointerException("You passed a null string.");
         int i = start;
-        for (int count = 0; i < string.length() && count < n; i++)
+        int count = 0;
+        for (; i < string.length() && count < n; i++)
             if (string.charAt(i) == delineator) count++;
+        if(count < n) return string.length() + 1;
         return i;
     }
-    
+
     /**
      * Gets the double at the given index in the line.
+     *
      * @param str The line.
      * @param index The index of the formated line for the desired double.
      * @return The value at the given index in the formated line.
      */
-    private double doubleAt(String str, int index){
+    private double doubleAt(String str, int index) {
         int startTerm = charCount(str, 0, index);
-        return Double.parseDouble(str.substring(startTerm + 1, charCount(str, startTerm, 1)));
+        return Double.parseDouble(str.substring(startTerm, charCount(str, startTerm, 1) - 1));
     }
 
     /**
@@ -191,11 +213,10 @@ public class FileFormat {
         return (int) doubleAt(string, time);
     }
 
-    
-    
     public class Reader extends BufferedReader {
 
         private boolean backUp = false;
+
         /**
          *
          * @param fileName The name of the file to be read.
@@ -203,21 +224,24 @@ public class FileFormat {
          */
         public Reader(String fileName) throws FileNotFoundException {
             super(new FileReader(fileName));
-            readLine();
+            try {
+                super.readLine();
+            } catch (IOException ex) {
+                Logger.getLogger(FileFormat.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
-
 
         private String lastLine;
 
         @Override
         public String readLine() {
-            if(backUp){
+            if (backUp) {
                 backUp = false;
                 return lastLine;
             }
             try {
                 String tempLine = super.readLine();
-                while(!inWindow(tempLine)) tempLine = readLine();
+                while(tempLine != null && !inWindow(tempLine)) tempLine = super.readLine();
                 return lastLine = tempLine;
             } catch (IOException ex) {
                 Logger.getLogger(Reader.class.getName()).log(Level.SEVERE, null, ex);
@@ -253,28 +277,39 @@ public class FileFormat {
         public boolean isTracked() {
             return FileFormat.this.isTracked(readLine());
         }
-        
+
         /**
          * Backs the reader up one line.
          */
-        public void backOneLine(){
-            if(backUp) throw new RuntimeException(
-                    "This reader is already backed up.  "
-                            + "A reader can not backup more than once.");
+        public void backOneLine() {
+            if (backUp) throw new RuntimeException(
+                        "This reader is already backed up.  "
+                        + "A reader can not backup more than once.");
+        }
+
+        /**
+         * Jumps the reader forward to the first line of the given charge.
+         * @param  charge The desired charge.
+         * @return This reader.
+         */
+        @SuppressWarnings("empty-statement")
+        public Reader jumpToCharge(boolean charge) {
+            String line;
+            while ((line = readLine()) != null && chargeFrom(line) != charge);
+            backOneLine();
+            return this;
         }
 
         @Override
-        public boolean ready(){
-            
-            try { 
+        public boolean ready() {
+
+            try {
                 return !backUp && super.ready();
             } catch (IOException ex) {
                 Logger.getLogger(FileFormat.class.getName()).log(Level.SEVERE, null, ex);
                 throw new RuntimeException(ex);
             }
         }
-        
-        
 
     }
 

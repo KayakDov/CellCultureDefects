@@ -1,16 +1,16 @@
 package creationfusion;
 
-import GeometricTools.Loc;
-import java.awt.Rectangle;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
@@ -27,13 +27,15 @@ import java.util.stream.StreamSupport;
  */
 public class DefectManager {
 
-    private List<Defect> posDefects, negDefects;
+    private DefectSet posDefects, negDefects;
     private String fileName;
     private FileFormat fileFormat;
     private int timeThreshold;
     double distThreshold;
     private int endTime = -1;
 
+    public final static boolean POS = true, NEG = false, BIRTH = true, DEATH = false;
+    
     /**
      * Constructs a DefectManager with the specified file name.
      *
@@ -41,10 +43,15 @@ public class DefectManager {
      * @param fileFormat The format of the file.
      */
     public DefectManager(String fileName, FileFormat fileFormat) {
-        this.negDefects = Collections.synchronizedList(new ArrayList<>());
-        this.posDefects = Collections.synchronizedList(new ArrayList<>());
         this.fileName = fileName;
         this.fileFormat = fileFormat;
+        
+        Map<Boolean, Integer> maxID = this.maxFileID();
+        
+        this.posDefects = new DefectSet(maxID.get(POS) + 1, POS);
+        this.negDefects = new DefectSet(maxID.get(NEG) + 1, NEG);
+        
+        
     }
 
     /**
@@ -70,31 +77,6 @@ public class DefectManager {
         }
     }
 
-    /**
-     * Has each defect track its absences. TODO: rewrite this to use latest
-     * tracking infrostructure.
-     */
-    public void setAbsences() {
-
-        fileStream()
-                .map(line -> fileFormat.snapDefect(line))
-                .filter(SnapDefect::isTracked)
-                .filter(sd -> !addDefect(sd))
-                .forEachOrdered(sd -> {
-
-                    Defect def = getDefect(sd);
-
-                    if (sd.getTime() == def.getBirth().getTime())
-                        def.resetBirthDeath();
-
-                    else {
-                        int absence = sd.getTime() - def.getDeath().getTime() - 1;
-                        if (absence > 0) def.addToTimeAWOL(absence);
-                        def.updateBirthDeath(sd);
-                    }
-
-                });
-    }
 
     /**
      * An internal integrity check method. Checks if each defect is stored
@@ -110,8 +92,26 @@ public class DefectManager {
 
     }
 
-    private List<Defect> defects(boolean charge) {
+    /**
+     * Returns the list of defects of the given charge. Note, some indices may
+     * be null.
+     *
+     * @param charge The charge of the desired defects.
+     * @return The list of defects of the desired charge.
+     */
+    private DefectSet defects(boolean charge) {
         return charge ? posDefects : negDefects;
+    }
+
+    /**
+     * Returns the stream of defects of the given charge. This is safer than
+     * calling the list since none will be null.
+     *
+     * @param charge The charge of the desired defects.
+     * @return A stream of defects of the desired charge.
+     */
+    private Stream<Defect> defectStream(boolean charge) {
+        return charge ? positives() : negatives();
     }
 
     /**
@@ -168,22 +168,6 @@ public class DefectManager {
 
     }
 
-    /**
-     * Adds a defect to the appropriate container.
-     *
-     * @param sd The defect to be added.
-     * @return True if the defect was added, false if the defect already
-     * existed.
-     */
-    private boolean addDefect(SnapDefect sd) {
-        List<Defect> defects = defects(sd.getCharge());
-        while (defects(sd.getCharge()).size() <= sd.getID()) defects.add(null);
-        if (defects.get(sd.getID()) == null) {
-            defects.set(sd.getID(), new Defect(sd));
-            return true;
-        }
-        return false;
-    }
 
     /**
      * Loads defects from the specified file. Sets their birthday and deathdays,
@@ -195,8 +179,41 @@ public class DefectManager {
         fileStream().parallel()
                 .map(line -> fileFormat.snapDefect(line))
                 .filter(SnapDefect::isTracked)
-                .filter(sd -> !addDefect(sd))
-                .forEach(sd -> getDefect(sd).updateBirthDeath(sd));
+                .forEach(sd -> defects(sd.getCharge()).add(sd));
+    }
+
+    /**
+     * Finds the positive and negative defects with the highest IDss in the
+     * file.
+     *
+     * @return The highest posative and negative IDs in teh file. The first
+     * index it the positive and the second index is the negative.
+     */
+    public final HashMap<Boolean, Integer> maxFileID() {
+        
+        HashMap<Boolean, Integer> max = new HashMap<>(2);
+        max.put(POS, 0);
+        max.put(NEG, 0);
+
+        IntStream.range(0, 2).parallel().mapToObj(i -> i==1)
+                .forEach(charge -> {
+            try (FileFormat.Reader reader = fileFormat.getReader(fileName)) {
+                
+                reader.jumpToCharge(charge);
+                String line;
+                while((line = reader.readLine()) != null && fileFormat.chargeFrom(line) == charge){
+                    int id = fileFormat.IDFrom(line);
+                    if(id != SnapDefect.NO_ID && max.get(charge) < id) 
+                        max.put(charge, id);
+                }
+
+            } catch (IOException ex) {
+                Logger.getLogger(DefectManager.class.getName()).log(Level.SEVERE, null, ex);
+                throw new RuntimeException(ex);
+            }
+
+        });
+        return max;
 
     }
 
@@ -205,17 +222,6 @@ public class DefectManager {
      */
     public void loadPairs() {
         pairDefects(SpaceTemp.defaultDistanceThreshold, SpaceTemp.defaultTimeThreshold);
-    }
-
-    /**
-     * Creates a set of all the stored defects with the given charge.
-     *
-     * @return A set of all the stored defects with teh given chagre.
-     */
-    private Set<Defect> concurrentSet(boolean charge) {
-        Set<Defect> set = new ConcurrentHashMap<Defect, Integer>().keySet();
-        set.addAll(defects(charge));
-        return set;
     }
 
     /**
@@ -234,12 +240,12 @@ public class DefectManager {
         Set<Defect> possibleBirths = new HashSet<>(negDefects);
         Set<Defect> possibleDeaths = new HashSet<>(negDefects);
 
-        for (Defect lonely : posDefects) {
+        positives().forEach(lonely -> {
             if (lonely.getBirth().getTime() > time)
                 lonely.setTwin(getPair(lonely, possibleBirths, true));
             if (lonely.getDeath().getTime() < getEndTime() - time)
                 lonely.setSpouse(getPair(lonely, possibleDeaths, false));
-        }
+        });
     }
 
     /**
@@ -282,8 +288,8 @@ public class DefectManager {
      *
      * @return The number of positive defects.
      */
-    public int numPositiveDefect() {
-        return posDefects.size();
+    public long numPositiveDefect() {
+        return positives().count();
     }
 
     /**
@@ -301,7 +307,7 @@ public class DefectManager {
      * @return All the defects.
      */
     public Stream<Defect> all() {
-        return Stream.concat(posDefects.stream(), negDefects.stream());
+        return Stream.concat(positives(), negatives());
     }
 
     /**
@@ -310,7 +316,7 @@ public class DefectManager {
      * @return All the positive defects.
      */
     public Stream<Defect> positives() {
-        return posDefects.stream();
+        return posDefects.stream().filter(def -> def != null);
     }
 
     /**
@@ -319,7 +325,7 @@ public class DefectManager {
      * @return All the negative defects.
      */
     public Stream<Defect> negatives() {
-        return negDefects.stream();
+        return negDefects.stream().filter(def -> def != null);
     }
 
     /**
@@ -365,7 +371,7 @@ public class DefectManager {
      * Removes all spouses and twins.
      */
     private void clearPairing() {
-        posDefects.stream().parallel().forEach(defect -> defect.clearPairs());
+        positives().parallel().forEach(defect -> defect.clearPairs());
     }
 
     /**
@@ -401,7 +407,7 @@ public class DefectManager {
      */
     public double spoouseIsTwin() {
         return (double) positives().filter(Defect::spouseIsTwin)
-                .count() / posDefects.size();
+                .count() / positives().count();
     }
 
     /**
@@ -481,23 +487,19 @@ public class DefectManager {
      * @return The defect for which the proffered SnapDefect is a moment of.
      */
     public Defect getDefect(SnapDefect sd) {
-        return defects(sd.getCharge()).get(sd.getID());
+        return defects(sd.getCharge()).get(sd);
     }
 
     /**
      * Loads the life courses of each defect.
      */
     public void loadLifeCourses() {
-        if(posDefects.isEmpty()) this.loadPairs();
-        
+        if (posDefects.isEmpty()) loadDefects();
+
         all().parallel().forEach(def -> def.prepForTracking());
         
-        fileStream().parallel()
-                .map(line -> fileFormat.snapDefect(line))
-                .forEach(sd -> getDefect(sd).addLifeSnap(sd));
-                
+        loadDefects();
+
     }
-  
-    
 
 }

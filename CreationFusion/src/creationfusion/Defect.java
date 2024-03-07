@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 /**
  * Describes a defect tracked over time.
  */
-public class Defect {
+public class Defect implements hasChargeID{
 
     private Defect twin;
     private Defect spouse;
@@ -174,12 +174,13 @@ public class Defect {
         return death;
     }
 
+    
     /**
      * Updates the time and location of this defect.
      *
      * @param sd The current time and location.
      */
-    public void updateBirthDeath(SpaceTemp sd) {
+    public synchronized void updateBirthDeath(SpaceTemp sd) {
         if (sd.getTime() < getBirth().getTime()) birth = sd;
         else if (sd.getTime() > getDeath().getTime()) death = sd;
     }
@@ -283,7 +284,7 @@ public class Defect {
      * Prepares this defect to track the distances from its spouse and twin.
      */
     public void prepForTracking() {
-        lifeCourse = charge ? new PositiveSnDefect[age()] : new NegSnapDefect[age()];
+        lifeCourse = charge ? new PositiveSnDefect[age() + 1] : new NegSnapDefect[age() + 1];
     }
 
     /**
@@ -304,10 +305,13 @@ public class Defect {
      *
      * @param time The time from birth/death.
      * @param birth True for time from birth, false for time from death.
-     * @return The snap defect at the given time from birth/death.
+     * @return The snap defect at the given time from birth/death.  If the time
+     * is greater than the age, then null is returned.
      */
     public SnapDefect locFromEvent(int time, boolean birth) {
+        if(time > age()) return null;
         return lifeCourse[birth ? time : lifeCourse.length - 1 - time];
+        
     }
 
     /**
@@ -320,7 +324,9 @@ public class Defect {
      */
     public double dist(int timeFromEvent, boolean birth) {
         if (timeFromEvent > age()) return Double.POSITIVE_INFINITY;
+        
         SnapDefect partnerLoc = getPartner(birth).locFromEvent(timeFromEvent, birth);
+        
         if (partnerLoc == null || locFromEvent(timeFromEvent, birth) == null)
             return Double.POSITIVE_INFINITY;
 
@@ -364,4 +370,11 @@ public class Defect {
 
     }
 
+    /**
+     * Is this defects entire life course meant to be tracked.
+     * @return 
+     */
+    public boolean followingLifeCourse(){
+        return lifeCourse != null;
+    }
 }

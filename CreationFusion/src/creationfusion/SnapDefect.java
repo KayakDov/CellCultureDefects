@@ -5,7 +5,7 @@ import java.util.Arrays;
 /**
  * Represents a snapshot of a defect at a moment in time.
  */
-public abstract class SnapDefect extends SpaceTemp {
+public abstract class SnapDefect extends SpaceTemp implements hasChargeID{
 
     private final int id;
     
@@ -47,14 +47,6 @@ public abstract class SnapDefect extends SpaceTemp {
      * @return true if the defect has a positive charge, false otherwise.
      */
     public abstract boolean getCharge();
-
-    /**
-     * Checks if this defect is tracked (i.e., has an ID assigned).
-     * @return true if the defect is tracked, false otherwise.
-     */
-    public boolean isTracked() {
-        return id != NO_ID;
-    }
 
     
     public boolean equals(SnapDefect sd) {
