@@ -4,7 +4,7 @@ package creationfusion;
  * A positive SnapDefect.
  * @author E. Dov Neimand
  */
-public class PositiveSnDefect extends SnapDefect{
+public class PosSnapDefect extends SnapDefect{
     
     private double angle;
     
@@ -16,7 +16,7 @@ public class PositiveSnDefect extends SnapDefect{
      * @param id The id of the defect.
      * @param angle The angle of the defect relative to the x axis.
      */
-    public PositiveSnDefect(double x, double y, int t, int id, double angle) {
+    public PosSnapDefect(double x, double y, int t, int id, double angle) {
         super(x, y, t, id);
         this.angle = angle;
     }
@@ -24,6 +24,15 @@ public class PositiveSnDefect extends SnapDefect{
     @Override
     public boolean getCharge() {
         return true;
+    }
+
+    /**
+     * The angle of the snap defect relative to the x axis.  This is the
+     * angle of a vector pointing toward the tail of the defect.
+     * @return The angle of the snap defect relative to the x axis.
+     */
+    public double tailAngle() {
+        return angle;
     }
     
     

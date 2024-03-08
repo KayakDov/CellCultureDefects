@@ -5,14 +5,18 @@ import java.util.Arrays;
 /**
  * Represents a snapshot of a defect at a moment in time.
  */
-public abstract class SnapDefect extends SpaceTemp implements hasChargeID{
+public abstract class SnapDefect extends SpaceTemp implements hasChargeID {
 
     private final int id;
-    
+
     public final static int NO_ID = Integer.MAX_VALUE;
 
+    private double displacementAngle;
+
     /**
-     * Constructs a new SnapDefect instance with the specified location, ID, and charge.
+     * Constructs a new SnapDefect instance with the specified location, ID, and
+     * charge.
+     *
      * @param loc The location of the defect.
      * @param id The ID of the defect.
      */
@@ -20,22 +24,24 @@ public abstract class SnapDefect extends SpaceTemp implements hasChargeID{
         super(loc);
         this.id = id;
     }
-    
+
     /**
-     * Constructs a new SnapDefect instance with the specified location, ID, and charge.
+     * Constructs a new SnapDefect instance with the specified location, ID, and
+     * charge.
+     *
      * @param x The x value.
      * @param y The y value.
      * @param t The time value.
      * @param id The ID of the snap Defect.
      */
-    public SnapDefect(double x, double y, int t, int id){
+    public SnapDefect(double x, double y, int t, int id) {
         super(x, y, t);
         this.id = id;
     }
 
-
     /**
      * Gets the ID of this defect.
+     *
      * @return The ID of the defect.
      */
     public int getID() {
@@ -44,11 +50,11 @@ public abstract class SnapDefect extends SpaceTemp implements hasChargeID{
 
     /**
      * Gets the charge of this defect.
+     *
      * @return true if the defect has a positive charge, false otherwise.
      */
     public abstract boolean getCharge();
 
-    
     public boolean equals(SnapDefect sd) {
         return sd.id == id && sd.getTime() == getTime() && sd.getCharge() == getCharge();
     }
@@ -73,7 +79,21 @@ public abstract class SnapDefect extends SpaceTemp implements hasChargeID{
         return getCharge() == other.getCharge() && getTime() == other.getTime();
     }
 
-    
-    
-    
+    /**
+     * Sets the displacement from the previous and next locations.
+     *
+     * @param prev
+     * @param next
+     */
+    public void setDisplacementAngle(SpaceTemp prev, SpaceTemp next) {
+        
+        if (prev == null || prev.getTime() != getTime() - 1) 
+            displacementAngle = next.minus(this).angle();
+
+        else if (next == null || next.getTime() != getTime() + 1) 
+            displacementAngle = minus(prev).angle();
+        
+        else displacementAngle = next.minus(prev).angle();
+        
+    }
 }

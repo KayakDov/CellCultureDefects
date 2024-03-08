@@ -198,7 +198,7 @@ public class Defect implements hasChargeID{
      * The location of this defect at the given time. Note, you must prep and
      * load lifeCourse before calling this method.
      *
-     * @param time The time of the desired location.
+     * @param time The time (frame number) of the desired location.
      * @return The desired SnapDefect.
      */
     public SnapDefect getSnapDefect(int time) {
@@ -281,10 +281,10 @@ public class Defect implements hasChargeID{
     }
 
     /**
-     * Prepares this defect to track the distances from its spouse and twin.
+     * Prepares this defect to track the defectPairs from its spouse and twin.
      */
     public void prepForTracking() {
-        lifeCourse = charge ? new PositiveSnDefect[age() + 1] : new NegSnapDefect[age() + 1];
+        lifeCourse = charge ? new PosSnapDefect[age() + 1] : new NegSnapDefect[age() + 1];
     }
 
     /**
@@ -315,24 +315,18 @@ public class Defect implements hasChargeID{
     }
 
     /**
-     * The distance from the spouse or twin at the given time.
-     *
-     * @param timeFromEvent The time from the event that the distance is
-     * desired.
-     * @param birth True for birth event, false for death event.
-     * @return The distance at the time from the event.
+     * A pair of snap defects.
+     * @param birth True if twins are desired, false for fusion partners.
+     * @param timeFromEvent The amount of time form birth or death of this defect.
+     * @return 
      */
-    public double dist(int timeFromEvent, boolean birth) {
-        if (timeFromEvent > age()) return Double.POSITIVE_INFINITY;
-        
-        SnapDefect partnerLoc = getPartner(birth).locFromEvent(timeFromEvent, birth);
-        
-        if (partnerLoc == null || locFromEvent(timeFromEvent, birth) == null)
-            return Double.POSITIVE_INFINITY;
-
-        return partnerLoc.dist(locFromEvent(timeFromEvent, birth));
+    public SnapDefectPair snapPair(boolean birth, int timeFromEvent){
+        return new SnapDefectPair(
+                locFromEvent(timeFromEvent, birth), 
+                getPartner(birth).locFromEvent(timeFromEvent, birth), 
+                birth);
     }
-
+    
     /**
      * Gets the partners snap defect at the desired time.
      *
@@ -347,26 +341,18 @@ public class Defect implements hasChargeID{
     }
 
     /**
-     * An array of the distances from teh estimated fartherst distance until
-     * event.
-     * @param birth True for distances from twin, false for distances from spouse.
-     * @return An array of distances from the twin or spouse.  
+     * A stream of this defects snapsDefects together with their birth or 
+     * death pairs.
+     * @param birth True for twin, false for spouses.
+     * @return A stream of this defects snapsDefects together with their birth 
+     * or death pairs.
      */
-    public double[] distances(boolean birth) {
+    public Stream<SnapDefectPair> defectPairs(boolean birth) {
 
-        if (hasPartner(birth)) {
-
-            double[] distances = new double[lifeCourse.length];
-            Arrays.setAll(distances, i -> dist(i, birth));
-
-            if (spouseIsTwin())
-                return Arrays.copyOf(distances, UnimodalArrayMax.argMax(distances));
-            
-            return distances;
-        
-        
-        }
-        return new double[0];
+        return hasPartner(birth)?
+                IntStream.range(0, lifeCourse.length)
+                        .mapToObj(i -> snapPair(birth, i)):
+                Stream.of();
 
     }
 
@@ -376,5 +362,15 @@ public class Defect implements hasChargeID{
      */
     public boolean followingLifeCourse(){
         return lifeCourse != null;
+    }
+    
+    /**
+     * Sets the displacement angles of all the snap defects.
+     */
+    public void setDisplacementAngles(){
+        IntStream.range(1, lifeCourse.length - 1)
+                .forEach(i -> lifeCourse[i].setDisplacementAngle(lifeCourse[i - 1], lifeCourse[i + 1]));
+       lifeCourse[0].setDisplacementAngle(null, lifeCourse[1]);
+       lifeCourse[lifeCourse.length - 1].setDisplacementAngle(lifeCourse[lifeCourse.length - 2], null);
     }
 }

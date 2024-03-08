@@ -28,7 +28,7 @@ public class Rectangle {
      * @param width The length of the x-axis interval.
      * @param height The length of the y-axis interval.
      */
-    public Rectangle(Loc loc, double width, double height) {
+    public Rectangle(Vec loc, double width, double height) {
         this.x = loc.getX();
         this.y = loc.getY();
         this.width = width;
@@ -40,7 +40,7 @@ public class Rectangle {
      * @param loc The point to check for membership in the rectangle.
      * @return True if the point is in the rectangle, false otherwise.
      */
-    public boolean contains(Loc loc){
+    public boolean contains(Vec loc){
         return contains(loc.getX(), loc.getY());
     }
     
@@ -66,7 +66,7 @@ public class Rectangle {
             Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY){
               
         @Override
-        public boolean contains(Loc loc) {
+        public boolean contains(Vec loc) {
             return true;
         }
         

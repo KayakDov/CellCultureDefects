@@ -32,8 +32,8 @@ public class main {
                 .forEach(defect -> System.out.println(
                         Arrays.toString(
                                 Arrays.copyOf(
-                                        defect.distances(DefectManager.BIRTH), 
-                                        Math.min(defect.distances(DefectManager.BIRTH).length, 6))
+                                        defect.defectPairs(DefectManager.BIRTH), 
+                                        Math.min(defect.defectPairs(DefectManager.BIRTH).length, 6))
                         )
                     )
                 );

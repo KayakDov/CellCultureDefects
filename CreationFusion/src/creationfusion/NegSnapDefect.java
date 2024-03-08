@@ -6,7 +6,7 @@ package creationfusion;
  */
 public class NegSnapDefect extends SnapDefect{
     
-    private double[] angle;
+    private double[] tailAngles;
     
     /**
      * A negative SnapDefect.
@@ -18,7 +18,7 @@ public class NegSnapDefect extends SnapDefect{
      */
     public NegSnapDefect(double x, double y, int t, int id, double... angle) {
         super(x, y, t, id);
-        this.angle = angle;
+        this.tailAngles = angle;
     }
 
     
@@ -26,6 +26,14 @@ public class NegSnapDefect extends SnapDefect{
     @Override
     public boolean getCharge() {
         return false;
+    }
+
+    /**
+     * The angles of the tails.
+     * @return The angles of the tails.
+     */
+    public double[] tailAngles() {
+        return tailAngles;
     }
     
     

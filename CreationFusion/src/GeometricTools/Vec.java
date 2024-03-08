@@ -4,7 +4,7 @@ package GeometricTools;
 /**
  * Represents a location in the coordinate plane.
  */
-public class Loc {
+public class Vec {
 
     /** Threshold for equality comparison. */
     public static final double equalityThreshold = 1e-10;
@@ -17,7 +17,7 @@ public class Loc {
      * @param x The x-coordinate.
      * @param y The y-coordinate.
      */
-    public Loc(double x, double y) {
+    public Vec(double x, double y) {
         this.x = x;
         this.y = y;
     }
@@ -26,17 +26,69 @@ public class Loc {
      * Constructs a new Loc instance by copying another Loc instance.
      * @param orig The original Loc instance to copy.
      */
-    public Loc(Loc orig) {
+    public Vec(Vec orig) {
         this.x = orig.x;
         this.y = orig.y;
     }
 
     /**
+     * The norm of this vector.
+     * @return The norm of this vector.
+     */
+    public double norm(){
+        return Math.sqrt(x*x + y*y);
+    }
+    
+    /**
+     * This vector minus another vector.
+     * @param v The other vector.
+     * @return This vector minus the proffered vector.
+     */
+    public Vec minus(Vec v){
+        return new Vec(x-v.x, y - v.y);
+    }
+    
+    /**
+     * The angle of the vector pointing from this Vec to the proffered vec.
+     * Equvuilently, atan2(vec.minus(this))
+     * @param vec The other vector with home the angle is deisred.
+     * @return The angle of the vector pointing from this Vec to the proffered vec.
+     */
+    public double angleTo(Vec vec){
+        return Math.atan2(vec.y - y, vec.x - x);
+    }
+    
+    /**
+     * The mult of this vector and a scalar.
+     * @param t A scalar.
+     * @return The prduct of this vector and a scalar.
+     */
+    public Vec mult(double t){
+        return new Vec(x*t, y*t);
+    }
+    
+    /**
+     * The sum of the two vectors.
+     * @param vec The other vector.
+     * @return A new vector that is the sum of the two vectors.
+     */
+    public Vec sum(Vec vec){
+        return new Vec(x + vec.x, y + vec.y);
+    }
+    
+    /**
+     * The angle of this vector relative to the x axis.
+     * @return The angle of this vector.
+     */
+    public double angle(){
+        return Math.atan2(y, x);
+    }
+    /**
      * Calculates the distance between this location and another location.
      * @param loc The other location.
      * @return The distance between this location and the specified location.
      */
-    public double dist(Loc loc) {
+    public double dist(Vec loc) {
         double dx = loc.x - x;
         double dy = loc.y - y;
         return Math.sqrt(dx * dx + dy * dy);
@@ -77,10 +129,10 @@ public class Loc {
         if (obj == this) {
             return true;
         }
-        if (!(obj instanceof Loc)) {
+        if (!(obj instanceof Vec)) {
             return false;
         }
-        Loc other = (Loc) obj;
+        Vec other = (Vec) obj;
         return this.dist(other) <= equalityThreshold;
     }
 

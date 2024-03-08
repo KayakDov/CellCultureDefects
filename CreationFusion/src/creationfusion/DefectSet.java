@@ -8,18 +8,18 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 /**
- * A set for defects.  Adding unique SnapDefects is threadsafe.
+ * A set for defects.  Adding unique SnapDefects can be done concurrently.
  * That is, So long as any two SnapDefects have different times or different ids
- * then adding them is threadsafe.
+ * then they can be added concurrently.
  *
  * @author E. Dov Neimand
  */
 public class DefectSet implements Collection<Defect> {
 
     private int size = 0;
-    private Defect[] array;
-    private boolean charge;
-    private Lock[] locks;
+    private final Defect[] array;
+    private final boolean charge;
+    private final Lock[] locks;
 
     /**
      * Constructor.
@@ -262,8 +262,8 @@ public class DefectSet implements Collection<Defect> {
     public static void main(String[] args) {
         DefectSet ds = new DefectSet(4, true);
         
-        ds.add(new PositiveSnDefect(0, 0, 3, 2, .5));
-        ds.add(new PositiveSnDefect(0, 0, 2, 3, .5));
+        ds.add(new PosSnapDefect(0, 0, 3, 2, .5));
+        ds.add(new PosSnapDefect(0, 0, 2, 3, .5));
         
         Iterator<Defect> iter= ds.iterator();
         

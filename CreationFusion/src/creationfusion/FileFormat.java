@@ -128,7 +128,7 @@ public class FileFormat {
         boolean lineCharge = Double.parseDouble(split[charge]) > 0;
         double lineAng1 = Double.parseDouble(split[angle1]);
         if (lineCharge)
-            return new PositiveSnDefect(lineX, lineY, lineT, lineID, lineAng1);
+            return new PosSnapDefect(lineX, lineY, lineT, lineID, lineAng1);
 
         double lineAng2 = Double.parseDouble(split[angle1 + 1]);
         double lineAng3 = Double.parseDouble(split[angle1 + 2]);

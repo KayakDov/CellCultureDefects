@@ -1,12 +1,12 @@
 package creationfusion;
 
-import GeometricTools.Loc;
+import GeometricTools.Vec;
 
 
 /**
  * Represents a point in space-time.
  */
-public class SpaceTemp extends Loc {
+public class SpaceTemp extends Vec {
 
     private final int time;
     
@@ -18,7 +18,7 @@ public class SpaceTemp extends Loc {
      * @param loc The spatial location.
      * @param t The time value.
      */
-    public SpaceTemp(Loc loc, int t) {
+    public SpaceTemp(Vec loc, int t) {
         super(loc.getX(), loc.getY());
         this.time = t;
     }
