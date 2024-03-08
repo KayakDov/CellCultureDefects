@@ -1,6 +1,7 @@
 package creationfusion;
 
-import java.util.Arrays;
+import GeometricTools.Vec;
+
 
 /**
  * Represents a snapshot of a defect at a moment in time.
@@ -11,7 +12,7 @@ public abstract class SnapDefect extends SpaceTemp implements hasChargeID {
 
     public final static int NO_ID = Integer.MAX_VALUE;
 
-    private double displacementAngle;
+    private Vec dxdt;
 
     /**
      * Constructs a new SnapDefect instance with the specified location, ID, and
@@ -88,12 +89,22 @@ public abstract class SnapDefect extends SpaceTemp implements hasChargeID {
     public void setDisplacementAngle(SpaceTemp prev, SpaceTemp next) {
         
         if (prev == null || prev.getTime() != getTime() - 1) 
-            displacementAngle = next.minus(this).angle();
+            dxdt = next.minus(this).mult(1/(next.getTime() - getTime()));
 
         else if (next == null || next.getTime() != getTime() + 1) 
-            displacementAngle = minus(prev).angle();
+            dxdt = minus(prev).mult(1/(getTime() - prev.getTime()));
         
-        else displacementAngle = next.minus(prev).angle();
+        else dxdt = next.minus(prev).mult(1/(next.getTime() - prev.getTime()));
         
     }
+
+    /**
+     * Displacement divided by time.
+     * @return Displacement divided by time.
+     */
+    public Vec getDxdt() {
+        return dxdt;
+    }
+    
+    
 }

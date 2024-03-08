@@ -1,6 +1,8 @@
 package creationfusion;
 
+import GeometricTools.Vec;
 import java.util.Arrays;
+import java.util.function.IntToDoubleFunction;
 
 /**
  *
@@ -47,10 +49,11 @@ public class SnapDefectPair {
     
     /**
      * The distance between the two defects.
-     * @return 
+     * @return The distance between the two defects. Inifnity if one of the 
+     * defects is null.
      */
     public double dist(){
-        if(pos == null || neg == null) return Double.POSITIVE_INFINITY;
+        if(!workingPair()) return Double.POSITIVE_INFINITY;
         return pos.dist(neg);
     }
     
@@ -59,19 +62,21 @@ public class SnapDefectPair {
      * with the x axis.
      * @return The angle of the vector from the positive defect to the negative 
      * defect, with the x axis.
+     * Returns double.NaN if one of the defects is null;
      */
-    private double connectingAngle(){
-        if(pos == null || neg == null) return Double.NaN;
+    private double mpAngle(){
+        if(!workingPair()) return Double.NaN;
         return pos.angleTo(neg);
     }
     
     /**
      * The angle between the positive tail and the negative defect.
      * @return The angle between the positive tail and the negative defect.
+     * Returns double.NaN if one of the defects is null;
      */
     public double anglePRel(){
-        if(pos == null || neg == null) return Double.NaN;
-        return pos.tailAngle() - connectingAngle();
+        if(!workingPair()) return Double.NaN;
+        return pos.tailAngle() - mpAngle();
     }
     
     /**
@@ -79,11 +84,16 @@ public class SnapDefectPair {
      * @return 
      */
     public double[] ang123Rel(){
-        if(pos == null || neg == null) return new double[0];
-        double[] ang123Rel = new double[3];
-        Arrays.setAll(ang123Rel, i -> neg.tailAngles()[i] - connectingAngle());
-        return ang123Rel;
+        return angles3(i -> neg.tailAngles()[i] - mpAngle());
         
+    }
+    
+    /**
+     * Are both defects functional?
+     * @return True if neither defect is null, false otherwise.
+     */
+    public boolean workingPair(){
+        return pos != null && neg != null;
     }
     
     /**
@@ -94,6 +104,41 @@ public class SnapDefectPair {
      */
     public boolean fuseUp(){
         return anglePRel() > 0;
+    }
+    
+    /**
+     * The movement of the positive defect relative to the negative defect.
+     * @return The movement of the positive defect relative to the negative defect.
+     */
+    public Vec relDxdt(){
+        return pos.getDxdt().minus(neg.getDxdt());
+    }
+    
+    /**
+     * Creates a new array with 3 angles in it.
+     * @return A new array with 3 angles in it.
+     */
+    private double[] angles3(IntToDoubleFunction f){
+        if(!workingPair()) return new double[0];
+        double[] angles3 = new double[3];
+        Arrays.setAll(angles3, i -> f.applyAsDouble(i));
+        return angles3;
+    }
+    
+    /**
+     * The angles of the tails relative to one another.
+     * @return The angles of the tails relative to one another.
+     */
+    public double[] mp123(){
+        return angles3(i -> pos.tailAngle() - neg.tailAngles()[i]);
+    }
+    
+    /**
+     * The average of mp123 mod (2/3)pi.
+     * @return The average of mp123 mod (2/3)pi.
+     */
+    public double mpPhase(){
+        return Arrays.stream(mp123()).average().getAsDouble() % (2*Math.PI/3);
     }
     
 }
