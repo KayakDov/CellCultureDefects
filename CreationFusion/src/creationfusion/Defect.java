@@ -21,7 +21,6 @@ public class Defect implements hasChargeID{
     private SpaceTemp birth, death;
     final int ID;
     final boolean charge;
-    ArrayList<Integer> abscenses; //TODO: remove
     private SnapDefect[] lifeCourse;
 
     /**
@@ -31,7 +30,6 @@ public class Defect implements hasChargeID{
      *
      */
     public Defect(SnapDefect sd) {
-        this.abscenses = new ArrayList<>();
         death = sd;
         birth = sd;
         this.ID = sd.getID();
@@ -250,25 +248,6 @@ public class Defect implements hasChargeID{
     public boolean near(Defect other, boolean birth, double dist, int time) {
         if (birth) return getBirth().near(other.getBirth(), dist, time);
         else return getDeath().near(other.getDeath(), dist, time);
-    }
-
-    /**
-     * Adds to the amount of time this Defect was not accounted for between its
-     * birth and death.
-     *
-     * @param time The amount of time abs
-     */
-    public void addToTimeAWOL(int time) {
-        abscenses.add(time);
-    }
-
-    /**
-     * The list of absence lengths.
-     *
-     * @return The list of absence lengths.
-     */
-    public List<Integer> getAbscenses() {
-        return Collections.unmodifiableList(abscenses);
     }
 
     /**

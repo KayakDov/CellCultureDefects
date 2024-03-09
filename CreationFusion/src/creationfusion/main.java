@@ -15,13 +15,12 @@ public class main {
      */
     public static void main(String[] args) {
                 
-        DefectManager dm = new DefectManager(
-                "PlusAndMinusTM.csv", 
-                FileFormat.DEFAULT.setWindow(new Rectangle(900, 0, 1800, 900))
-        );
+        DefectManager dm = new DefectManager("PlusAndMinusTM.csv").
+                setWindow(new Rectangle(900, 0, 1800, 900));
         
         dm.loadPairs();
         dm.loadLifeCourses();
+        dm.all().forEach(def -> def.setDisplacementAngles());
         
 //        System.out.println("DM Status:" + dm.positives().count());
   
@@ -29,14 +28,7 @@ public class main {
         
         
         dm.all().filter(defect -> defect.hasTwin() && !defect.spouseIsTwin())
-                .forEach(defect -> System.out.println(
-                        Arrays.toString(
-                                Arrays.copyOf(
-                                        defect.defectPairs(DefectManager.BIRTH), 
-                                        Math.min(defect.defectPairs(DefectManager.BIRTH).length, 6))
-                        )
-                    )
-                );
+                .forEach(defect -> System.out.println(defect.ID));
 
     }
 

@@ -1,5 +1,6 @@
 package creationfusion;
 
+import GeometricTools.Rectangle;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -60,7 +61,18 @@ public class DefectManager {
      * @param fileName The name of the file containing defect data.
      */
     public DefectManager(String fileName) {
-        this(fileName, FileFormat.DEFAULT);
+        this(fileName, FileFormat.defaultFileFormat(fileName));
+    }
+    
+    /**
+     * Sets the DefectManager to only look at a specific window of defects.
+     * 
+     * @param rect Defects outside this rectangle will be ignored.
+     * @return this.
+     */
+    public DefectManager setWindow(Rectangle rect){
+        fileFormat.setWindow(rect);
+        return this;
     }
 
     /**
@@ -499,6 +511,8 @@ public class DefectManager {
         all().parallel().forEach(def -> def.prepForTracking());
         
         loadDefects();
+        
+        all().parallel().forEach(def -> def.setDisplacementAngles());
 
     }
 

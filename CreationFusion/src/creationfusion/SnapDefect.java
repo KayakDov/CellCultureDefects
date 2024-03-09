@@ -99,7 +99,8 @@ public abstract class SnapDefect extends SpaceTemp implements hasChargeID {
     }
 
     /**
-     * Displacement divided by time.
+     * Displacement divided by time.  
+     * Be sure to load this with setDisplacement angle before calling.
      * @return Displacement divided by time.
      */
     public Vec getDxdt() {

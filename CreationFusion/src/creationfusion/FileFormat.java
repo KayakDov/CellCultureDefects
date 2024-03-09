@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -12,30 +13,34 @@ import java.util.logging.Logger;
  * @author E. Dov Neimand Specifications for file structure.
  */
 public class FileFormat {
-
-    /**
-     * Useless default indices.
-     */
-    public final static int LABEL = 1, ID = 2, QUALITY = 4, POSITION_X = 5,
-            POSITION_Y = 6, POSITION_Z = 7, FRAME = 9, RADIUS = 10,
-            VISIBILITY = 11, MANUAL_SPOT_COLOR = 12, MEAN_INTENSITY_CH1 = 13,
-            MEDIAN_INTENSITY_CH1 = 14, MIN_INTENSITY_CH1 = 15, MAX_INTENSITY_CH1 = 16,
-            TOTAL_INTENSITY_CH1 = 17, STD_INTENSITY_CH1 = 18, CONTRAST_CH1 = 19,
-            SNR_CH1 = 20, x_img1 = 23,
-            y_img1 = 24;
-
-    /**
-     * Useful default indices.
-     */
-    public final static int TRACK_ID = 3, POSITION_T = 8, x_img = 21,
-            y_img = 22, ang1 = 25, ang2 = 26, ang3 = 27, CHARGE = 28;
-
-    private final static char DELINEATOR = ',';
+//  Dfault values no longer needed.
+//    /**
+//     * Useless default indices.
+//     */
+//    public final static int LABEL = 1, ID = 2, QUALITY = 4, POSITION_X = 5,
+//            POSITION_Y = 6, POSITION_Z = 7, FRAME = 9, RADIUS = 10,
+//            VISIBILITY = 11, MANUAL_SPOT_COLOR = 12, MEAN_INTENSITY_CH1 = 13,
+//            MEDIAN_INTENSITY_CH1 = 14, MIN_INTENSITY_CH1 = 15, MAX_INTENSITY_CH1 = 16,
+//            TOTAL_INTENSITY_CH1 = 17, STD_INTENSITY_CH1 = 18, CONTRAST_CH1 = 19,
+//            SNR_CH1 = 20, x_img1 = 23,
+//            y_img1 = 24;
+//
+//    /**
+//     * Useful default indices.
+//     */
+//    public final static int TRACK_ID = 3, POSITION_T = 8, x_img = 21,
+//            y_img = 22, ang1 = 25, ang2 = 26, ang3 = 27, CHARGE = 28;
+//
+//    private final static char DELINEATOR = ',';
 
     /**
      * An instance with the default file specs.
+     * @param fileName The name of the file with default column headers.
+     * @return A File format with default column names.
      */
-    public static FileFormat DEFAULT = new FileFormat(x_img, y_img, TRACK_ID, POSITION_T, CHARGE, ang1, DELINEATOR, Rectangle.COORD_PLANE);
+    public static FileFormat defaultFileFormat(String fileName) {
+        return new FileFormat("x_img", "y_img", "TRACK_ID", "POSITION_T", "charge", "ang1", ',', Rectangle.COORD_PLANE, fileName);
+    }
 
     public final int x, y, id, time, angle1, charge;
     public final char delineator;
@@ -66,6 +71,81 @@ public class FileFormat {
     }
 
     /**
+     * Finds the index of the key in the array.
+     *
+     * @param array The array containing the key.
+     * @param key The element in the array whose index is desired.
+     * @return The index of the desired element. If it's not in the array, -1 is
+     * returned.
+     */
+    private int indexOf(String[] array, String key) {
+        for (int i = 0; i < array.length; i++)
+            if (array[i].equals(key)) return i;
+        return -1;
+    }
+
+    /**
+     * Sets the indices of the needed values in the file.
+     *
+     * @param line A string containing the names of the columns seperated by the
+     * delineator.
+     * @param x The name of the x column.
+     * @param y The name of the y column.
+     * @param id The name of the ID column.
+     * @param time The name of the time column.
+     * @param charge The name of the charge column.
+     * @param angle1 The name of the first angle column.
+     * @param delineator The delineator that separates values.
+     * @param window The window within the file to be read.
+     */
+    public FileFormat(String line, String x, String y, String id, String time, String charge, String angle1, char delineator, Rectangle window) {
+        String[] split = line.split("" + delineator);
+        this.x = indexOf(split, x);
+        this.y = indexOf(split, y);
+        this.id = indexOf(split, id);
+        this.time = indexOf(split, time);
+        this.charge = indexOf(split, charge);
+        this.angle1 = indexOf(split, angle1);
+        this.delineator = delineator;
+        this.window = window;
+    }
+
+    /**
+     * Sets the indices of the needed values in the file.
+     *
+     * @param x The name of the x column.
+     * @param y The name of the y column.
+     * @param id The name of the ID column.
+     * @param time The name of the time column.
+     * @param angle The name of the first angle column.
+     * @param charge The name of the charge column.
+     * @param delineator The delineator that separates values.
+     * @param fileName The name of a file whos first line has the column names
+     * on it.
+     * @param window The window within the file to be read.
+     */
+    public FileFormat(String x, String y, String id, String time, String charge, String angle, char delineator, Rectangle window, String fileName) {
+
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String[] split = br.readLine().split("" + delineator);
+            this.x = indexOf(split, x);
+            this.y = indexOf(split, y);
+            this.id = indexOf(split, id);
+            this.time = indexOf(split, time);
+            this.charge = indexOf(split, charge);
+            this.angle1 = indexOf(split, angle);
+            this.delineator = delineator;
+            this.window = window;
+
+        } catch (Exception ex) {
+            Logger.getLogger(FileFormat.class
+                    .getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
+
+        }        
+    }
+
+    /**
      * Gets a file reader for a file with this default arangement.
      *
      * @param fileName The name of the file.
@@ -82,7 +162,6 @@ public class FileFormat {
         }
     }
 
-
     /**
      * Finds the charge of the line, if the line is properly formatted.
      *
@@ -93,16 +172,17 @@ public class FileFormat {
     public boolean chargeFrom(String line) {
         return doubleAt(line, charge) > 0;
     }
-    
+
     /**
      * The id of the line.
+     *
      * @param line The line for which the ID is desired.
      * @return The ID of the line.
      */
-    public int IDFrom(String line){
-        try{
-        return (int)doubleAt(line, id);
-        }catch(NumberFormatException nfe){
+    public int IDFrom(String line) {
+        try {
+            return (int) doubleAt(line, id);
+        } catch (NumberFormatException nfe) {
             return SnapDefect.NO_ID;
         }
     }
@@ -187,7 +267,7 @@ public class FileFormat {
         int count = 0;
         for (; i < string.length() && count < n; i++)
             if (string.charAt(i) == delineator) count++;
-        if(count < n) return string.length() + 1;
+        if (count < n) return string.length() + 1;
         return i;
     }
 
@@ -211,6 +291,7 @@ public class FileFormat {
      */
     public int time(String string) {
         return (int) doubleAt(string, time);
+
     }
 
     public class Reader extends BufferedReader {
@@ -241,7 +322,8 @@ public class FileFormat {
             }
             try {
                 String tempLine = super.readLine();
-                while(tempLine != null && !inWindow(tempLine)) tempLine = super.readLine();
+                while (tempLine != null && !inWindow(tempLine))
+                    tempLine = super.readLine();
                 return lastLine = tempLine;
             } catch (IOException ex) {
                 Logger.getLogger(Reader.class.getName()).log(Level.SEVERE, null, ex);
@@ -289,7 +371,8 @@ public class FileFormat {
 
         /**
          * Jumps the reader forward to the first line of the given charge.
-         * @param  charge The desired charge.
+         *
+         * @param charge The desired charge.
          * @return This reader.
          */
         @SuppressWarnings("empty-statement")
