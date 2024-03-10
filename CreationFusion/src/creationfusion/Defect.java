@@ -1,13 +1,5 @@
 package creationfusion;
 
-import dataTools.UnimodalArrayMax;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -150,7 +142,8 @@ public class Defect implements hasChargeID{
      * Clears the twin and spouses this defect.
      */
     public void clearPairs() {
-        twin.twin = spouse.spouse = null;
+        if(hasTwin())twin.twin = null;
+        if(hasSpouse()) spouse.spouse = null;
         twin = spouse = null;
     }
 
@@ -330,8 +323,9 @@ public class Defect implements hasChargeID{
 
         return hasPartner(birth)?
                 IntStream.range(0, lifeCourse.length)
-                        .mapToObj(i -> snapPair(birth, i)):
-                Stream.of();
+                        .mapToObj(i -> snapPair(birth, i))
+                        .filter(sdp -> sdp.workingPair())
+                :Stream.of();
 
     }
 
@@ -347,9 +341,11 @@ public class Defect implements hasChargeID{
      * Sets the displacement angles of all the snap defects.
      */
     public void setDisplacementAngles(){
+        if(lifeCourse.length <= 1) return;
         IntStream.range(1, lifeCourse.length - 1)
-                .forEach(i -> lifeCourse[i].setDisplacementAngle(lifeCourse[i - 1], lifeCourse[i + 1]));
-       lifeCourse[0].setDisplacementAngle(null, lifeCourse[1]);
-       lifeCourse[lifeCourse.length - 1].setDisplacementAngle(lifeCourse[lifeCourse.length - 2], null);
+                .filter(i -> lifeCourse[i] != null)
+                .forEach(i -> lifeCourse[i].setVelocity(lifeCourse[i - 1], lifeCourse[i + 1]));
+       lifeCourse[0].setVelocity(null, lifeCourse[1]);
+       lifeCourse[lifeCourse.length - 1].setVelocity(lifeCourse[lifeCourse.length - 2], null);
     }
 }

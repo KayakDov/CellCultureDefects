@@ -1,6 +1,7 @@
 package creationfusion;
 
 import GeometricTools.Rectangle;
+import ReadWrite.FormatedFileWriter;
 import java.util.Arrays;
 import java.util.stream.DoubleStream;
 
@@ -15,20 +16,16 @@ public class main {
      */
     public static void main(String[] args) {
                 
-        DefectManager dm = new DefectManager("PlusAndMinusTM.csv").
-                setWindow(new Rectangle(900, 0, 1800, 900));
-        
+        DefectManager dm = new DefectManager("PlusAndMinusTM.csv").setWindow(new Rectangle(900, 0, 1800, 900));
+                
         dm.loadPairs();
         dm.loadLifeCourses();
-        dm.all().forEach(def -> def.setDisplacementAngles());
-        
-//        System.out.println("DM Status:" + dm.positives().count());
-  
-
         
         
-        dm.all().filter(defect -> defect.hasTwin() && !defect.spouseIsTwin())
-                .forEach(defect -> System.out.println(defect.ID));
+        FormatedFileWriter ffw = FormatedFileWriter.defaultWriter("RPE1_pairs.csv");
+        
+        dm.positives().filter(def -> def.hasTwin()).flatMap(posDefect -> posDefect.defectPairs(DefectManager.BIRTH)).forEach(sd -> ffw.writeLine(sd));
+        dm.positives().filter(def -> def.hasSpouse()).flatMap(posDefect -> posDefect.defectPairs(DefectManager.DEATH)).forEach(sd -> ffw.writeLine(sd));
 
     }
 

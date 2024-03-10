@@ -66,7 +66,7 @@ public class Rectangle {
             Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY){
               
         @Override
-        public boolean contains(Vec loc) {
+        public boolean contains(double x, double y){
             return true;
         }
         

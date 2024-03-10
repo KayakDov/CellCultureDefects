@@ -86,7 +86,8 @@ public abstract class SnapDefect extends SpaceTemp implements hasChargeID {
      * @param prev
      * @param next
      */
-    public void setDisplacementAngle(SpaceTemp prev, SpaceTemp next) {
+    public void setVelocity(SpaceTemp prev, SpaceTemp next) {
+        if(prev == null && next == null) return;
         
         if (prev == null || prev.getTime() != getTime() - 1) 
             dxdt = next.minus(this).mult(1/(next.getTime() - getTime()));
@@ -103,7 +104,7 @@ public abstract class SnapDefect extends SpaceTemp implements hasChargeID {
      * Be sure to load this with setDisplacement angle before calling.
      * @return Displacement divided by time.
      */
-    public Vec getDxdt() {
+    public Vec getVelocity() {
         return dxdt;
     }
     

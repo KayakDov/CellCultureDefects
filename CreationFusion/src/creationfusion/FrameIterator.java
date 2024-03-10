@@ -1,5 +1,6 @@
 package creationfusion;
 
+import ReadWrite.FileReadFormat;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -17,7 +18,7 @@ public class FrameIterator implements Iterator<Frame> {
 
     private final ChargedFrameIterator pos, neg;
 
-    public FrameIterator(String fileName, FileFormat fileFormat) {
+    public FrameIterator(String fileName, FileReadFormat fileFormat) {
         pos = new ChargedFrameIterator(fileName, fileFormat, true);
         neg = new ChargedFrameIterator(fileName, fileFormat, false);
     }
@@ -40,8 +41,8 @@ public class FrameIterator implements Iterator<Frame> {
      */
     public static class ChargedFrameIterator implements Iterator<HashMap<Integer, SnapDefect>> {
 
-        private FileFormat.Reader reader;
-        private FileFormat fileFormat;
+        private FileReadFormat.Reader reader;
+        private FileReadFormat fileFormat;
         private int time;
         private boolean hasNext;
         private final boolean charge;
@@ -55,7 +56,7 @@ public class FrameIterator implements Iterator<Frame> {
          * defects?
          */
         @SuppressWarnings("empty-statement")
-        public ChargedFrameIterator(String fileName, FileFormat fileFormat, boolean charge) {
+        public ChargedFrameIterator(String fileName, FileReadFormat fileFormat, boolean charge) {
             
             this.fileFormat = fileFormat;
             this.charge = charge;

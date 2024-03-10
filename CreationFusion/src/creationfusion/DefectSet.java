@@ -104,7 +104,7 @@ public class DefectSet implements Collection<Defect> {
     }
 
     /**
-     * Throws an exception if the charge parameter does not mathc the charge
+     * Throws an exception if the charge parameter does not match the charge
      * field.
      *
      * @param charge

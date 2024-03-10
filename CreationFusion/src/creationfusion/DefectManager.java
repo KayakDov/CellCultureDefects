@@ -1,12 +1,11 @@
 package creationfusion;
 
+import ReadWrite.FileReadFormat;
 import GeometricTools.Rectangle;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,7 +15,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
@@ -30,7 +28,7 @@ public class DefectManager {
 
     private DefectSet posDefects, negDefects;
     private String fileName;
-    private FileFormat fileFormat;
+    private FileReadFormat readFormat;
     private int timeThreshold;
     double distThreshold;
     private int endTime = -1;
@@ -43,9 +41,9 @@ public class DefectManager {
      * @param fileName The name of the file containing defect data.
      * @param fileFormat The format of the file.
      */
-    public DefectManager(String fileName, FileFormat fileFormat) {
+    public DefectManager(String fileName, FileReadFormat fileFormat) {
         this.fileName = fileName;
-        this.fileFormat = fileFormat;
+        this.readFormat = fileFormat;
         
         Map<Boolean, Integer> maxID = this.maxFileID();
         
@@ -61,7 +59,7 @@ public class DefectManager {
      * @param fileName The name of the file containing defect data.
      */
     public DefectManager(String fileName) {
-        this(fileName, FileFormat.defaultFileFormat(fileName));
+        this(fileName, FileReadFormat.defaultFileFormat(fileName));
     }
     
     /**
@@ -71,7 +69,7 @@ public class DefectManager {
      * @return this.
      */
     public DefectManager setWindow(Rectangle rect){
-        fileFormat.setWindow(rect);
+        readFormat.setWindow(rect);
         return this;
     }
 
@@ -82,7 +80,7 @@ public class DefectManager {
      */
     private Stream<String> fileStream() {
         try {
-            return Files.lines(Paths.get(fileName)).skip(1).filter(line -> fileFormat.inWindow(line));
+            return Files.lines(Paths.get(fileName)).skip(1).filter(line -> readFormat.inWindow(line));
         } catch (IOException ex) {
             Logger.getLogger(DefectManager.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException(ex);
@@ -138,7 +136,7 @@ public class DefectManager {
         HashSet<Integer> defects = new HashSet<>(posDefects.size() + negDefects.size());
         ArrayList<Integer> orderOfAppearence = new ArrayList<>(defects(charge).size());
 
-        try (FileFormat.Reader br = fileFormat.getReader(fileName)) {
+        try (FileReadFormat.Reader br = readFormat.getReader(fileName)) {
             SnapDefect sd;
 
             while ((sd = br.readSnapDefect()) != null) {
@@ -189,7 +187,7 @@ public class DefectManager {
     public void loadDefects() {
 
         fileStream().parallel()
-                .map(line -> fileFormat.snapDefect(line))
+                .map(line -> readFormat.snapDefect(line))
                 .filter(SnapDefect::isTracked)
                 .forEach(sd -> defects(sd.getCharge()).add(sd));
     }
@@ -209,12 +207,12 @@ public class DefectManager {
 
         IntStream.range(0, 2).parallel().mapToObj(i -> i==1)
                 .forEach(charge -> {
-            try (FileFormat.Reader reader = fileFormat.getReader(fileName)) {
+            try (FileReadFormat.Reader reader = readFormat.getReader(fileName)) {
                 
                 reader.jumpToCharge(charge);
                 String line;
-                while((line = reader.readLine()) != null && fileFormat.chargeFrom(line) == charge){
-                    int id = fileFormat.IDFrom(line);
+                while((line = reader.readLine()) != null && readFormat.chargeFrom(line) == charge){
+                    int id = readFormat.IDFrom(line);
                     if(id != SnapDefect.NO_ID && max.get(charge) < id) 
                         max.put(charge, id);
                 }
@@ -269,7 +267,7 @@ public class DefectManager {
         if (endTime == -1)
             if (posDefects.isEmpty())
                 return endTime = fileStream().parallel()
-                        .mapToInt(line -> fileFormat.time(line))
+                        .mapToInt(line -> readFormat.time(line))
                         .max().getAsInt();
             else
                 return endTime = all()
@@ -286,10 +284,10 @@ public class DefectManager {
      */
     public double percentTracked() throws IOException {
         int untracked = 0, tracked = 0;
-        try (FileFormat.Reader reader = fileFormat.getReader(fileName)) {
+        try (FileReadFormat.Reader reader = readFormat.getReader(fileName)) {
             String line;
             while ((line = reader.readLine()) != null)
-                if (fileFormat.isTracked(line)) tracked++;
+                if (readFormat.isTracked(line)) tracked++;
                 else untracked++;
         }
         return (double) tracked / (tracked + untracked);
@@ -374,7 +372,7 @@ public class DefectManager {
     /**
      * clears all stored defects.
      */
-    private void clearDefects() {
+    public void clearDefects() {
         posDefects.clear();
         negDefects.clear();
     }
@@ -396,7 +394,7 @@ public class DefectManager {
      * directly from the file, one frame at a time.
      */
     public FrameIterator.ChargedFrameIterator frameIterator(boolean charge) {
-        return new FrameIterator.ChargedFrameIterator(fileName, fileFormat, charge);
+        return new FrameIterator.ChargedFrameIterator(fileName, readFormat, charge);
     }
 
     /**
@@ -407,7 +405,7 @@ public class DefectManager {
      * time.
      */
     public FrameIterator frameIterator() {
-        return new FrameIterator(fileName, fileFormat);
+        return new FrameIterator(fileName, readFormat);
     }
 
     /**
