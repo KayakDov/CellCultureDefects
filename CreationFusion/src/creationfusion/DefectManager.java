@@ -536,7 +536,16 @@ public class DefectManager {
 
     }
 
-//    public double meanSquareDisplacement(){
-//        
-//    }
+    /**
+     * The mean square displacement of all the defects at the given time from
+     * their births.
+     * @param timeFromBirth
+     * @return The mean square displacement at the given time.
+     */
+    public double meanSquareDisplacement(int timeFromBirth){
+        return all().parallel()
+                .filter(def -> timeFromBirth <= def.age())
+                .mapToDouble(def -> def.displacement(timeFromBirth))
+                .map(d -> d*d).sum()/size();
+    }
 }
