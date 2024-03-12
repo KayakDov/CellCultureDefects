@@ -10,8 +10,8 @@ public class SpaceTemp extends Vec {
 
     private final int time;
     
-    public final static int defaultTimeThreshold = 4;
-    public final static double defaultDistanceThreshold = 40;
+    public final static int defaultTimeThreshold = 2;
+    public final static double defaultDistanceThreshold = 10;
 
     /**
      * Constructs a new SpaceTemp instance with the specified location and time.

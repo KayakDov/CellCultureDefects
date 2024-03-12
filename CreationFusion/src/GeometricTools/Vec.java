@@ -77,11 +77,22 @@ public class Vec {
     }
     
     /**
+     * Places an angle between 0 and 2pi.
+     * @param posOrNegAngle An angle that may be positive or negative.
+     * @return An angle between 0 and 2 pi.
+     */
+    public static double posAngle(double posOrNegAngle){
+        if(posOrNegAngle >= 2*Math.PI) return posOrNegAngle % (2*Math.PI);
+        if(posOrNegAngle < 0) return 2*Math.PI + posOrNegAngle%(2*Math.PI);
+        return posOrNegAngle;
+    }
+    
+    /**
      * The angle of this vector relative to the x axis.
      * @return The angle of this vector.
      */
     public double angle(){
-        return Math.atan2(y, x);
+        return posAngle(Math.atan2(y, x));
     }
     /**
      * Calculates the distance between this location and another location.

@@ -79,16 +79,17 @@ public class SnapDefectPair {
     }
 
     /**
-     * The angle of the vector from the positive defect to the negative defect,
-     * with the x axis.
-     *
-     * @return The angle of the vector from the positive defect to the negative
+     *      *
+     * The black line relative to the x axis, equivalently, 
+     * the angle of the vector from the minus defect to the positive defect.
+     * 
+     * @return The angle of the vector from the negative defect to the positive
      * defect, with the x axis. Returns double.NaN if one of the defects is
      * null;
      */
     public double mpAngle() {
         if (!workingPair()) return Double.NaN;
-        return pos.angleTo(neg);
+        return pos.minus(neg).angle();
     }
 
     /**
@@ -99,7 +100,7 @@ public class SnapDefectPair {
      */
     public double anglePRel() {
         if (!workingPair()) return Double.NaN;
-        return pos.tailAngle() - mpAngle();
+        return Vec.posAngle(pos.tailAngle() - mpAngle());
     }
 
     /**
@@ -108,7 +109,7 @@ public class SnapDefectPair {
      * @return
      */
     public double[] ang123Rel() {
-        return angles3(i -> neg.tailAngles()[i] - mpAngle());
+        return angles3(i -> Vec.posAngle(neg.tailAngle()[i] - mpAngle()));
 
     }
 
@@ -120,7 +121,7 @@ public class SnapDefectPair {
      * negative defect, false otherwise.
      */
     public boolean fuseUp() {
-        return anglePRel() > 0;
+        return anglePRel() < Math.PI; //TODO:  define each set of snap defects by the majarity of all fuse ups over lifespan. //Check if this flips?
     }
 
     /**
@@ -152,7 +153,7 @@ public class SnapDefectPair {
      * @return The angles of the tails relative to one another.
      */
     public double[] mp123() {
-        return angles3(i -> pos.tailAngle() - neg.tailAngles()[i]);
+        return angles3(i -> Vec.posAngle(neg.tailAngle()[i] - pos.tailAngle()));//TODO: should be between 0 and 2 pi
     }
 
     /**
@@ -173,7 +174,7 @@ public class SnapDefectPair {
      */
     public double anglep1_rel_vel_angle() {
         if(pos.getVelocity() == null) return Double.NaN;
-        return anglePRel() - pos.getVelocity().angle();
+        return anglePRel() - pos.getVelocity().angle();//TODO between 0 and 2pi
     }
 
 }

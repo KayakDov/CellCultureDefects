@@ -1,6 +1,6 @@
 package creationfusion;
 
-import ReadWrite.FileReadFormat;
+import ReadWrite.ReadManager;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -18,9 +18,13 @@ public class FrameIterator implements Iterator<Frame> {
 
     private final ChargedFrameIterator pos, neg;
 
-    public FrameIterator(String fileName, FileReadFormat fileFormat) {
-        pos = new ChargedFrameIterator(fileName, fileFormat, true);
-        neg = new ChargedFrameIterator(fileName, fileFormat, false);
+    /**
+     * Constructs a frame iterator.
+     * @param fileFormat The file to be read from.
+     */
+    public FrameIterator(ReadManager fileFormat) {
+        pos = new ChargedFrameIterator(fileFormat, DefectManager.POS);
+        neg = new ChargedFrameIterator(fileFormat, DefectManager.NEG);
     }
 
     @Override
@@ -40,9 +44,8 @@ public class FrameIterator implements Iterator<Frame> {
      * An iterator that runs over the snap defects of a specific charge.
      */
     public static class ChargedFrameIterator implements Iterator<HashMap<Integer, SnapDefect>> {
-
-        private FileReadFormat.Reader reader;
-        private FileReadFormat fileFormat;
+        
+        private ReadManager.Reader reader;
         private int time;
         private boolean hasNext;
         private final boolean charge;
@@ -50,18 +53,17 @@ public class FrameIterator implements Iterator<Frame> {
         /**
          * Constructs an iterator that gives frame by frame from a file.
          *
-         * @param fileName The name of the file.
          * @param fileFormat The format of the file to be read from.
          * @param charge Should this iterator read positive of negative charged
          * defects?
          */
         @SuppressWarnings("empty-statement")
-        public ChargedFrameIterator(String fileName, FileReadFormat fileFormat, boolean charge) {
+        public ChargedFrameIterator(ReadManager fileFormat, boolean charge) {
             
-            this.fileFormat = fileFormat;
+            
             this.charge = charge;
             time = 0;
-            reader = fileFormat.getReader(fileName).jumpToCharge(charge);
+            reader = fileFormat.getReader(charge);
             
             hasNext = reader.ready();
 
@@ -105,7 +107,7 @@ public class FrameIterator implements Iterator<Frame> {
                 
             }
             
-            if (sd == null || sd.getCharge() != charge) hasNext = false;
+            if (sd == null) hasNext = false;
 
             time++;
             return snaps;

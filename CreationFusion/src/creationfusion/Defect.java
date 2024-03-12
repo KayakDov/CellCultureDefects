@@ -1,5 +1,7 @@
 package creationfusion;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -192,9 +194,9 @@ public class Defect implements hasChargeID{
      * @param time The time (frame number) of the desired location.
      * @return The desired SnapDefect.
      */
-    public SnapDefect getSnapDefect(int time) {
+    public SnapDefect snapFromFrame(int time) {
         if (time < getBirth().getTime() || time > getDeath().getTime())
-            throw new IllegalArgumentException("This defect was not allive at " + time);
+            throw new IllegalArgumentException("This defect was not allive at " + time + ".  It was born at " + getBirth().getTime() + " and died at " + getDeath().getTime());
         return lifeCourse[time - getBirth().getTime()];
     }
 
@@ -268,7 +270,7 @@ public class Defect implements hasChargeID{
     public boolean duringLifeTime(int time) {
         if (time < getBirth().getTime() || time > getDeath().getTime())
             return false;
-        if (lifeCourse != null) return getSnapDefect(time) != null;
+        if (lifeCourse != null) return snapFromFrame(time) != null;
         return true;
     }
 
@@ -280,7 +282,7 @@ public class Defect implements hasChargeID{
      * @return The snap defect at the given time from birth/death.  If the time
      * is greater than the age, then null is returned.
      */
-    public SnapDefect locFromEvent(int time, boolean birth) {
+    public SnapDefect snapFromEvent(int time, boolean birth) {
         if(time > age()) return null;
         return lifeCourse[birth ? time : lifeCourse.length - 1 - time];
         
@@ -292,10 +294,10 @@ public class Defect implements hasChargeID{
      * @param timeFromEvent The amount of time form birth or death of this defect.
      * @return 
      */
-    public SnapDefectPair snapPair(boolean birth, int timeFromEvent){
+    public SnapDefectPair snapPairFromEvent(int timeFromEvent, boolean birth){
         return new SnapDefectPair(
-                locFromEvent(timeFromEvent, birth), 
-                getPartner(birth).locFromEvent(timeFromEvent, birth), 
+                snapFromEvent(timeFromEvent, birth), 
+                getPartner(birth).snapFromEvent(timeFromEvent, birth), 
                 birth);
     }
     
@@ -307,9 +309,13 @@ public class Defect implements hasChargeID{
      * @return The snap defect of the partner at the requested time. If no
      * defect is available, then a null value is returned.
      */
-    public SnapDefect patnerSnapDefect(int time, boolean birth) {
-        return (NegSnapDefect) (hasPartner(birth)
-                ? getPartner(birth).getSnapDefect(time) : null);
+    public SnapDefectPair snapPairFromFrame(int time, boolean birth) {
+        SnapDefect partnerSnap = 
+                hasPartner(birth) && getPartner(birth).duringLifeTime(time)? 
+                getPartner(birth).snapFromFrame(time): 
+                null;
+        
+        return new SnapDefectPair(snapFromFrame(time), partnerSnap, birth);
     }
 
     /**
@@ -323,7 +329,7 @@ public class Defect implements hasChargeID{
 
         return hasPartner(birth)?
                 IntStream.range(0, lifeCourse.length)
-                        .mapToObj(i -> snapPair(birth, i))
+                        .mapToObj(i -> snapPairFromFrame(getBirth().getTime() + i, birth))
                         .filter(sdp -> sdp.workingPair())
                 :Stream.of();
 
@@ -348,4 +354,23 @@ public class Defect implements hasChargeID{
        lifeCourse[0].setVelocity(null, lifeCourse[1]);
        lifeCourse[lifeCourse.length - 1].setVelocity(lifeCourse[lifeCourse.length - 2], null);
     }
+//    
+//    /**
+//     * An array of distances.  If this defect is married to its spouse, then
+//     * the array terminates around the maximum distance.  In either case,
+//     * the array begins with the minimum distance.
+//     * 
+//     * @param birth True for distance from twin starting at birth, false for distance
+//     * from spouse starting at death.
+//     * @return an array of distances.
+//     */
+//    public double[] distances(boolean birth){
+//        double[] distances = defectPairs(birth)
+//                .mapToDouble(SnapDefectPair::dist)
+//                .toArray();
+//        if(!birth) Collections.reverse(Arrays.asList(distances));
+//        if(spouseIsTwin()){
+//            
+//        }
+//    }
 }

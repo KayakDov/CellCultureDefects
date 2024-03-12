@@ -1,10 +1,8 @@
 package creationfusion;
 
-import ReadWrite.FileReadFormat;
+import ReadWrite.ReadManager;
 import GeometricTools.Rectangle;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -17,6 +15,7 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -27,30 +26,41 @@ import java.util.stream.StreamSupport;
 public class DefectManager {
 
     private DefectSet posDefects, negDefects;
-    private String fileName;
-    private FileReadFormat readFormat;
+    private ReadManager readManager;
     private int timeThreshold;
     double distThreshold;
     private int endTime = -1;
 
     public final static boolean POS = true, NEG = false, BIRTH = true, DEATH = false;
-    
+
     /**
      * Constructs a DefectManager with the specified file name.
      *
-     * @param fileName The name of the file containing defect data.
      * @param fileFormat The format of the file.
+     * @param distThreshold Two defects must have their creation or annihilation
+     * events closer than this threshold to be considered a pair.
+     * @param timeThreshold Two defects must have their creation or annihilation
+     * times closer than this threshold to be considered a pair.
      */
-    public DefectManager(String fileName, FileReadFormat fileFormat) {
-        this.fileName = fileName;
-        this.readFormat = fileFormat;
-        
-        Map<Boolean, Integer> maxID = this.maxFileID();
-        
-        this.posDefects = new DefectSet(maxID.get(POS) + 1, POS);
-        this.negDefects = new DefectSet(maxID.get(NEG) + 1, NEG);
-        
-        
+    public DefectManager(ReadManager fileFormat, int timeThreshold, double distThreshold) {
+
+        this.readManager = fileFormat;
+
+        Map<Boolean, DefectSet> defects = IntStream.range(0, 2)
+                .mapToObj(i -> i==1).parallel()
+                .collect(Collectors.toMap(
+                        charge -> charge, 
+                        charge -> new DefectSet(maxID(charge) + 1, charge)
+                ));
+
+        this.posDefects = defects.get(POS);
+        this.negDefects = defects.get(NEG);
+
+        setThresholds(timeThreshold, distThreshold);
+
+        loadDefects();
+
+        loadPairs();
     }
 
     /**
@@ -59,47 +69,50 @@ public class DefectManager {
      * @param fileName The name of the file containing defect data.
      */
     public DefectManager(String fileName) {
-        this(fileName, FileReadFormat.defaultFileFormat(fileName));
+        this(
+                ReadManager.defaultFileFormat(fileName),
+                SpaceTemp.defaultTimeThreshold,
+                SpaceTemp.defaultDistanceThreshold
+        );
     }
-    
+
     /**
      * Sets the DefectManager to only look at a specific window of defects.
-     * 
+     *
      * @param rect Defects outside this rectangle will be ignored.
      * @return this.
      */
-    public DefectManager setWindow(Rectangle rect){
-        readFormat.setWindow(rect);
+    public DefectManager setWindow(Rectangle rect) {
+        readManager.setWindow(rect);
         return this;
     }
 
     /**
-     * All the lines of the file.
+     * An internal integrity check method. Checks if each defect is stored
+     * correctly according to its index. Note, if a window is used then defects
+     * should not be correct.
      *
-     * @return All the lines of the file.
+     * @param charge true to check positive indices, false to check negative.
+     * @return True if each index is stored correctly according to its index.
+     * False otherwise.
      */
-    private Stream<String> fileStream() {
-        try {
-            return Files.lines(Paths.get(fileName)).skip(1).filter(line -> readFormat.inWindow(line));
-        } catch (IOException ex) {
-            Logger.getLogger(DefectManager.class.getName()).log(Level.SEVERE, null, ex);
-            throw new RuntimeException(ex);
-        }
-    }
+    public boolean indeciesAreCorrect(boolean charge) {
 
+        return IntStream.range(0, defects(charge).size())
+                .allMatch(i -> defects(charge).get(i) != null
+                && i == defects(charge).get(i).getID());
+    }
 
     /**
      * An internal integrity check method. Checks if each defect is stored
-     * correctly according to its index.
+     * correctly according to its index. Note, if a window is used then defects
+     * should not be correct.
      *
      * @return True if each index is stored correctly according to its index.
      * False otherwise.
      */
     public boolean indeciesAreCorrect() {
-
-        return IntStream.range(0, posDefects.size()).allMatch(i -> posDefects.get(i) != null && i == posDefects.get(i).getID())
-                && IntStream.range(0, negDefects.size()).allMatch(i -> negDefects.get(i) != null && i == negDefects.get(i).getID());
-
+        return indeciesAreCorrect(POS) && indeciesAreCorrect(NEG);
     }
 
     /**
@@ -120,8 +133,26 @@ public class DefectManager {
      * @param charge The charge of the desired defects.
      * @return A stream of defects of the desired charge.
      */
-    private Stream<Defect> defectStream(boolean charge) {
+    public Stream<Defect> defectStream(boolean charge) {
         return charge ? positives() : negatives();
+    }
+
+    /**
+     * The total number of defects.
+     *
+     * @return The total number of defects.
+     */
+    public int size() {
+        return posDefects.size() + negDefects.size();
+    }
+
+    /**
+     * Have any defects been loaded?
+     *
+     * @return True if a defect has been loaded, false otherwise.
+     */
+    public boolean isEmpty() {
+        return size() == 0;
     }
 
     /**
@@ -133,15 +164,15 @@ public class DefectManager {
      */
     public List<Integer> orderOfApearence(boolean charge) {
 
-        HashSet<Integer> defects = new HashSet<>(posDefects.size() + negDefects.size());
+        HashSet<Integer> defects = new HashSet<>(size());
         ArrayList<Integer> orderOfAppearence = new ArrayList<>(defects(charge).size());
 
-        try (FileReadFormat.Reader br = readFormat.getReader(fileName)) {
+        try (ReadManager.Reader br = readManager.getReader(charge)) {
             SnapDefect sd;
 
             while ((sd = br.readSnapDefect()) != null) {
 
-                if (sd.isTracked() && sd.getCharge() == charge && !defects.contains(sd.getID())) {
+                if (sd.isTracked() && !defects.contains(sd.getID())) {
                     defects.add(sd.getID());
                     orderOfAppearence.add(sd.getID());
                 }
@@ -178,16 +209,14 @@ public class DefectManager {
 
     }
 
-
     /**
      * Loads defects from the specified file. Sets their birthday and deathdays,
      * but does not set partners, angles, or distances.
      *
      */
-    public void loadDefects() {
+    public final void loadDefects() {
 
-        fileStream().parallel()
-                .map(line -> readFormat.snapDefect(line))
+        readManager.snapDefects()
                 .filter(SnapDefect::isTracked)
                 .forEach(sd -> defects(sd.getCharge()).add(sd));
     }
@@ -196,65 +225,55 @@ public class DefectManager {
      * Finds the positive and negative defects with the highest IDss in the
      * file.
      *
+     * @param charge The charge of the desired highest ID.
      * @return The highest posative and negative IDs in teh file. The first
      * index it the positive and the second index is the negative.
      */
-    public final HashMap<Boolean, Integer> maxFileID() {
+    public final int maxID(Boolean charge) {
         
-        HashMap<Boolean, Integer> max = new HashMap<>(2);
-        max.put(POS, 0);
-        max.put(NEG, 0);
+        int maxID = 0;
 
-        IntStream.range(0, 2).parallel().mapToObj(i -> i==1)
-                .forEach(charge -> {
-            try (FileReadFormat.Reader reader = readFormat.getReader(fileName)) {
+        try (ReadManager.Reader reader = readManager.getReader(charge)) {
+
+            String line;
+            
+            while ((line = reader.readLine()) != null)
                 
-                reader.jumpToCharge(charge);
-                String line;
-                while((line = reader.readLine()) != null && readFormat.chargeFrom(line) == charge){
-                    int id = readFormat.IDFrom(line);
-                    if(id != SnapDefect.NO_ID && max.get(charge) < id) 
-                        max.put(charge, id);
-                }
+                maxID = Math.max(readManager.IDFrom(line), maxID);
+            
+            return maxID;
 
-            } catch (IOException ex) {
-                Logger.getLogger(DefectManager.class.getName()).log(Level.SEVERE, null, ex);
-                throw new RuntimeException(ex);
-            }
-
-        });
-        return max;
+        } catch (IOException ex) {
+            Logger.getLogger(DefectManager.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
+        }
 
     }
 
     /**
      * Pairs the defects with the default thresholds for long eukaryotic cells.
      */
-    public void loadPairs() {
-        pairDefects(SpaceTemp.defaultDistanceThreshold, SpaceTemp.defaultTimeThreshold);
+    public final void loadPairs() {
+        pairDefects();
     }
 
     /**
      * Pairs defects based on proximity and time thresholds.
-     *
-     * @param dist The distance threshold for pairing defects.
-     * @param time The time threshold for pairing defects.
      */
-    public void pairDefects(double dist, int time) {
+    public void pairDefects() {
         clearPairing();
 
         if (posDefects.isEmpty()) loadDefects();
-
-        setThresholds(time, dist);
 
         Set<Defect> possibleBirths = new HashSet<>(negDefects);
         Set<Defect> possibleDeaths = new HashSet<>(negDefects);
 
         positives().forEach(lonely -> {
-            if (lonely.getBirth().getTime() > time)
-                lonely.setTwin(getPair(lonely, possibleBirths, true));
-            if (lonely.getDeath().getTime() < getEndTime() - time)
-                lonely.setSpouse(getPair(lonely, possibleDeaths, false));
+            if (lonely.getBirth().getTime() > timeThreshold) 
+                lonely.setTwin(getPair(lonely, possibleBirths, BIRTH));
+            
+            if (lonely.getDeath().getTime() < getEndTime() - timeThreshold)
+                lonely.setSpouse(getPair(lonely, possibleDeaths, DEATH));
         });
     }
 
@@ -266,9 +285,7 @@ public class DefectManager {
     public long getEndTime() {
         if (endTime == -1)
             if (posDefects.isEmpty())
-                return endTime = fileStream().parallel()
-                        .mapToInt(line -> readFormat.time(line))
-                        .max().getAsInt();
+                return endTime = readManager.timeColumn().max().getAsInt();
             else
                 return endTime = all()
                         .mapToInt(def -> def.getDeath().getTime()).max().getAsInt();
@@ -283,14 +300,7 @@ public class DefectManager {
      * @throws IOException If an I/O error occurs while reading the file.
      */
     public double percentTracked() throws IOException {
-        int untracked = 0, tracked = 0;
-        try (FileReadFormat.Reader reader = readFormat.getReader(fileName)) {
-            String line;
-            while ((line = reader.readLine()) != null)
-                if (readFormat.isTracked(line)) tracked++;
-                else untracked++;
-        }
-        return (double) tracked / (tracked + untracked);
+        return size()/readManager.lines().count();
     }
 
     /**
@@ -299,7 +309,7 @@ public class DefectManager {
      * @return The number of positive defects.
      */
     public long numPositiveDefect() {
-        return positives().count();
+        return posDefects.size();
     }
 
     /**
@@ -326,7 +336,20 @@ public class DefectManager {
      * @return All the positive defects.
      */
     public Stream<Defect> positives() {
-        return posDefects.stream().filter(def -> def != null);
+        return posDefects.stream();
+    }
+
+    /**
+     * All the pairs for all the defects.
+     *
+     * @param birth true if creation pairs are desired, false for annihilation
+     * pairs.
+     * @return All the pairs for all the defects.
+     */
+    public Stream<SnapDefectPair> pairs(boolean birth) {
+        return positives()
+                .filter(posDef -> posDef.hasPartner(birth))
+                .flatMap(posDef -> posDef.defectPairs(birth));
     }
 
     /**
@@ -335,7 +358,7 @@ public class DefectManager {
      * @return All the negative defects.
      */
     public Stream<Defect> negatives() {
-        return negDefects.stream().filter(def -> def != null);
+        return negDefects.stream();
     }
 
     /**
@@ -364,7 +387,7 @@ public class DefectManager {
      * @param time Another point is near this one if it is closer in time.
      * @param dist Another point is near this one if it's closer in space.
      */
-    private void setThresholds(int time, double dist) {
+    public final void setThresholds(int time, double dist) {
         this.timeThreshold = time;
         this.distThreshold = dist;
     }
@@ -394,7 +417,7 @@ public class DefectManager {
      * directly from the file, one frame at a time.
      */
     public FrameIterator.ChargedFrameIterator frameIterator(boolean charge) {
-        return new FrameIterator.ChargedFrameIterator(fileName, readFormat, charge);
+        return new FrameIterator.ChargedFrameIterator(readManager, charge);
     }
 
     /**
@@ -405,7 +428,7 @@ public class DefectManager {
      * time.
      */
     public FrameIterator frameIterator() {
-        return new FrameIterator(fileName, readFormat);
+        return new FrameIterator(readManager);
     }
 
     /**
@@ -504,14 +527,16 @@ public class DefectManager {
      * Loads the life courses of each defect.
      */
     public void loadLifeCourses() {
-        if (posDefects.isEmpty()) loadDefects();
 
         all().parallel().forEach(def -> def.prepForTracking());
-        
+
         loadDefects();
-        
+
         all().parallel().forEach(def -> def.setDisplacementAngles());
 
     }
 
+//    public double meanSquareDisplacement(){
+//        
+//    }
 }

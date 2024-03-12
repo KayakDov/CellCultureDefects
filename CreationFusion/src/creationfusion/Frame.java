@@ -93,4 +93,6 @@ public class Frame {
     public boolean contains(int id, boolean charge){
         return map(charge).containsKey(id);
     }
+    
+    
 }

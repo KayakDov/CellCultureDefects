@@ -32,7 +32,7 @@ public class NegSnapDefect extends SnapDefect{
      * The angles of the tails.
      * @return The angles of the tails.
      */
-    public double[] tailAngles() {
+    public double[] tailAngle() {
         return tailAngles;
     }
     
