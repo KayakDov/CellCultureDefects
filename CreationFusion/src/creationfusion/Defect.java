@@ -1,5 +1,8 @@
 package creationfusion;
 
+import snapDefects.PosSnapDefect;
+import snapDefects.NegSnapDefect;
+import snapDefects.SnapDefect;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.stream.IntStream;
@@ -354,6 +357,18 @@ public class Defect implements hasChargeID{
        lifeCourse[0].setVelocity(null, lifeCourse[1]);
        lifeCourse[lifeCourse.length - 1].setVelocity(lifeCourse[lifeCourse.length - 2], null);
     }
+    
+    /**
+     * The distance from the location this defect was created.
+     * @param timeFromBirth The time afterbirth the distance is to be taken.
+     * @return The distance from the place of birth.
+     */
+    public double displacement(int timeFromBirth){
+        return birth.dist(snapFromEvent(timeFromBirth, DefectManager.BIRTH));
+    }
+    
+    
+    
 //    
 //    /**
 //     * An array of distances.  If this defect is married to its spouse, then

@@ -1,5 +1,8 @@
 package creationfusion;
 
+import snapDefects.PosSnapDefect;
+import snapDefects.NegSnapDefect;
+import snapDefects.SnapDefect;
 import GeometricTools.Vec;
 import java.util.Arrays;
 import java.util.function.IntToDoubleFunction;

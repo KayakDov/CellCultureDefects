@@ -1,5 +1,7 @@
 package creationfusion;
 
+import snapDefects.PosSnapDefect;
+import snapDefects.SnapDefect;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;

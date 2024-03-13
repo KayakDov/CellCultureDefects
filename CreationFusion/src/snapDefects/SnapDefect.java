@@ -1,6 +1,8 @@
-package creationfusion;
+package snapDefects;
 
 import GeometricTools.Vec;
+import creationfusion.SpaceTemp;
+import creationfusion.hasChargeID;
 
 
 /**

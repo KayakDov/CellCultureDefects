@@ -1,5 +1,6 @@
 package creationfusion;
 
+import snapDefects.SnapDefect;
 import ReadWrite.ReadManager;
 import GeometricTools.Rectangle;
 import java.io.IOException;

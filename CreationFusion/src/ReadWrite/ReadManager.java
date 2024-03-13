@@ -2,9 +2,9 @@ package ReadWrite;
 
 import GeometricTools.Rectangle;
 import creationfusion.DefectManager;
-import creationfusion.NegSnapDefect;
-import creationfusion.PosSnapDefect;
-import creationfusion.SnapDefect;
+import snapDefects.NegSnapDefect;
+import snapDefects.PosSnapDefect;
+import snapDefects.SnapDefect;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;

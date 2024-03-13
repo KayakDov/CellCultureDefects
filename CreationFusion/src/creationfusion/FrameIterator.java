@@ -1,5 +1,6 @@
 package creationfusion;
 
+import snapDefects.SnapDefect;
 import ReadWrite.ReadManager;
 import java.io.BufferedReader;
 import java.io.FileReader;

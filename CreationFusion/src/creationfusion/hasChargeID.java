@@ -1,5 +1,7 @@
 package creationfusion;
 
+import snapDefects.SnapDefect;
+
 /**
  *
  * @author E. Dov Neimand
