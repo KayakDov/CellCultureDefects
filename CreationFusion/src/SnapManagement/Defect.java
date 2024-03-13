@@ -378,9 +378,13 @@ public class Defect implements hasChargeID{
      * @return False if there are both some fused up and some fused down,
      * true otherwise.
      */
-    public boolean fuseUpConsistent(){
-        return defectPairs(DefectManager.DEATH).map(def -> def.fuseUp()).allMatch(b -> true) 
-                || this.defectPairs(DefectManager.DEATH).map(def -> def.fuseUp()).allMatch(b -> false);
+    public double fuseUpConsistent(){
+        
+        long numFuseUps = defectPairs(DefectManager.DEATH).filter(pair -> pair.fuseUp()).count();
+        long numFuseDown = defectPairs(DefectManager.DEATH).filter(pair -> !pair.fuseUp()).count();
+        return (double)Math.max(numFuseDown, numFuseUps)/(numFuseDown + numFuseUps);
+        
+        
     }
     
 //    

@@ -96,9 +96,7 @@ public class main {
         dm.loadLifeCourses();
                 
         System.out.println(
-                dm.all().filter(def -> def.age() > 3)
-                        .filter(def -> def.fuseUpConsistent()).count()/
-                        (double)dm.size());
+                dm.positives().filter(def -> def.age() > 3).mapToDouble(def -> def.fuseUpConsistent()).average().getAsDouble());
         
         
 //        parseArgs(args);
