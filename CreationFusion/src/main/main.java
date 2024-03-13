@@ -59,6 +59,15 @@ public class main {
      * @param args The user arguments.
      */
     public static void parseArgs(String[] args){
+
+//        args = new String[7];
+//        args[0] = "PlusAndMinusTM.csv";
+//        args[1] = "RPE1_pairs.csv";
+//        args[2] = "window";
+//        args[3] = "900";
+//        args[4] = "0";
+//        args[5] = "1800";
+//        args[6] = "900";
         
         ReadManager ff = ReadManager.defaultFileFormat(args[0])
                 .setWindow(getWindow(args));
@@ -78,21 +87,21 @@ public class main {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        
-//        args = new String[7];
-//        args[0] = "PlusAndMinusTM.csv";
-//        args[1] = "RPE1_pairs.csv";
-//        args[2] = "window";
-//        args[3] = "900";
-//        args[4] = "0";
-//        args[5] = "1800";
-//        args[6] = "900";
-        
-        parseArgs(args);
 
-
-//        System.out.println((-3 % (2*Math.PI)) - Math.PI);
+        ReadManager ff = ReadManager.defaultFileFormat("PlusAndMinusTM.csv")
+                .setWindow(new Rectangle(900,0,900,900));
         
+        DefectManager dm = new DefectManager(ff, 30, 2);
+        
+        dm.loadLifeCourses();
+                
+        System.out.println(
+                dm.all().filter(def -> def.age() > 3)
+                        .filter(def -> def.fuseUpConsistent()).count()/
+                        (double)dm.size());
+        
+        
+//        parseArgs(args);
         
     }
 

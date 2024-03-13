@@ -1,6 +1,7 @@
 package SnapManagement;
 
 import SnapManagement.SnapDefectPair;
+import com.sun.source.doctree.HiddenTree;
 import defectsManagement.DefectManager;
 import snapDefects.SpaceTemp;
 import defectsManagement.hasChargeID;
@@ -371,7 +372,16 @@ public class Defect implements hasChargeID{
         return birth.dist(snapFromEvent(timeFromBirth, DefectManager.BIRTH));
     }
     
-    
+    /**
+     * Checks to see if all snap defects in this defect are fused up, or 
+     * if they are all fused down.
+     * @return False if there are both some fused up and some fused down,
+     * true otherwise.
+     */
+    public boolean fuseUpConsistent(){
+        return defectPairs(DefectManager.DEATH).map(def -> def.fuseUp()).allMatch(b -> true) 
+                || this.defectPairs(DefectManager.DEATH).map(def -> def.fuseUp()).allMatch(b -> false);
+    }
     
 //    
 //    /**
