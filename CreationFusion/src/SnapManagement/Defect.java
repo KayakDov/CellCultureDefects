@@ -1,5 +1,9 @@
-package creationfusion;
+package SnapManagement;
 
+import SnapManagement.SnapDefectPair;
+import defectsManagement.DefectManager;
+import snapDefects.SpaceTemp;
+import defectsManagement.hasChargeID;
 import snapDefects.PosSnapDefect;
 import snapDefects.NegSnapDefect;
 import snapDefects.SnapDefect;

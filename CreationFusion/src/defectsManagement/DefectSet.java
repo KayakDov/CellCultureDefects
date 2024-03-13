@@ -1,5 +1,6 @@
-package creationfusion;
+package defectsManagement;
 
+import SnapManagement.Defect;
 import snapDefects.PosSnapDefect;
 import snapDefects.SnapDefect;
 import java.util.Arrays;

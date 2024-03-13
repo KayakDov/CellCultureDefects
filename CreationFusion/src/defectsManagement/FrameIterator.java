@@ -1,5 +1,6 @@
-package creationfusion;
+package defectsManagement;
 
+import SnapManagement.Frame;
 import snapDefects.SnapDefect;
 import ReadWrite.ReadManager;
 import java.io.BufferedReader;

@@ -1,7 +1,7 @@
 package ReadWrite;
 
 import GeometricTools.Rectangle;
-import creationfusion.DefectManager;
+import defectsManagement.DefectManager;
 import snapDefects.NegSnapDefect;
 import snapDefects.PosSnapDefect;
 import snapDefects.SnapDefect;

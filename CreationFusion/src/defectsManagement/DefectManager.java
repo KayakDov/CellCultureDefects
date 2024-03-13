@@ -1,5 +1,9 @@
-package creationfusion;
+package defectsManagement;
 
+import snapDefects.SpaceTemp;
+import SnapManagement.Defect;
+import SnapManagement.Frame;
+import SnapManagement.SnapDefectPair;
 import snapDefects.SnapDefect;
 import ReadWrite.ReadManager;
 import GeometricTools.Rectangle;

@@ -1,7 +1,7 @@
 package ReadWrite;
 
 import GeometricTools.Vec;
-import creationfusion.SnapDefectPair;
+import SnapManagement.SnapDefectPair;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;

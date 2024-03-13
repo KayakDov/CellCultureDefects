@@ -1,4 +1,4 @@
-package creationfusion;
+package snapDefects;
 
 import GeometricTools.Vec;
 

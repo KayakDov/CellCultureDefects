@@ -1,4 +1,4 @@
-package creationfusion;
+package SnapManagement;
 
 import snapDefects.PosSnapDefect;
 import snapDefects.NegSnapDefect;

@@ -1,4 +1,4 @@
-package creationfusion;
+package defectsManagement;
 
 import snapDefects.SnapDefect;
 

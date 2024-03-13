@@ -1,8 +1,10 @@
-package creationfusion;
+package main;
 
+import snapDefects.SpaceTemp;
 import GeometricTools.Rectangle;
 import ReadWrite.ReadManager;
 import ReadWrite.FormatedFileWriter;
+import defectsManagement.DefectManager;
 import java.util.Arrays;
 import java.util.Collections;
 
