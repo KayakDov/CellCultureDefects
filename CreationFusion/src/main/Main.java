@@ -156,9 +156,8 @@ public class Main {
         DefectManager dm = new DefectManager(rm, 2, 30, 6, 10);
 
         dm.loadLifeCourses();
-        
-        
-        System.out.println(dm.avgStdDevAngPRel(false, 5, 10));        
+                
+        System.out.println(Angle.average(dm.pairedPos(false).map(pos -> pos.avgAnglePRel(true, 20))).deg());
         
 
 //        parseArgs(args);

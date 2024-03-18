@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 /**
  * Describes a defect tracked over time.
  */
-public class Defect implements hasChargeID{
+public class Defect implements hasChargeID {
 
     private Defect twin;
     private Defect spouse;
@@ -156,8 +156,8 @@ public class Defect implements hasChargeID{
      * Clears the twin and spouses this defect.
      */
     public void clearPairs() {
-        if(hasTwin())twin.twin = null;
-        if(hasSpouse()) spouse.spouse = null;
+        if (hasTwin()) twin.twin = null;
+        if (hasSpouse()) spouse.spouse = null;
         twin = spouse = null;
     }
 
@@ -179,7 +179,6 @@ public class Defect implements hasChargeID{
         return death;
     }
 
-    
     /**
      * Updates the time and location of this defect.
      *
@@ -222,8 +221,8 @@ public class Defect implements hasChargeID{
     // toString method
     @Override
     public String toString() {
-        return lifeCourse == null? getBirth() + " to " + getDeath() : 
-                Arrays.toString(lifeCourse).replace(", (", ",\n(").replace("null,", "");
+        return lifeCourse == null ? getBirth() + " to " + getDeath()
+                : Arrays.toString(lifeCourse).replace(", (", ",\n(").replace("null,", "");
     }
 
     /**
@@ -244,14 +243,15 @@ public class Defect implements hasChargeID{
     public boolean getCharge() {
         return charge;
     }
-    
+
     /**
      * Sets the pair of this defect.
+     *
      * @param birth True to set the twin false to set the spouse.
      * @param pair The spouse or twin.
      */
-    public void setPair(boolean birth, Defect pair){
-        if(birth) setTwin(pair);
+    public void setPair(boolean birth, Defect pair) {
+        if (birth) setTwin(pair);
         else setSpouse(pair);
     }
 
@@ -289,28 +289,30 @@ public class Defect implements hasChargeID{
      *
      * @param time The time from birth/death.
      * @param birth True for time from birth, false for time from death.
-     * @return The snap defect at the given time from birth/death.  If the time
+     * @return The snap defect at the given time from birth/death. If the time
      * is greater than the age, then null is returned.
      */
     public SnapDefect snapFromEvent(int time, boolean birth) {
-        if(time > age()) return null;
+        if (time > age()) return null;
         return lifeCourse[birth ? time : lifeCourse.length - 1 - time];
-        
+
     }
 
     /**
      * A pair of snap defects.
+     *
      * @param birth True if twins are desired, false for fusion partners.
-     * @param timeFromEvent The amount of time form birth or death of this defect.
-     * @return 
+     * @param timeFromEvent The amount of time form birth or death of this
+     * defect.
+     * @return
      */
-    public PairSnDef snapPairFromEvent(int timeFromEvent, boolean birth){
+    public PairSnDef snapPairFromEvent(int timeFromEvent, boolean birth) {
         return new PairSnDef(
-                snapFromEvent(timeFromEvent, birth), 
-                getPartner(birth).snapFromEvent(timeFromEvent, birth), 
+                snapFromEvent(timeFromEvent, birth),
+                getPartner(birth).snapFromEvent(timeFromEvent, birth),
                 birth);
     }
-    
+
     /**
      * Gets the partners snap defect at the desired time.
      *
@@ -320,129 +322,150 @@ public class Defect implements hasChargeID{
      * defect is available, then a null value is returned.
      */
     public PairSnDef snapPairFromFrame(int time, boolean birth) {
-        SnapDefect partnerSnap = 
-                hasPair(birth) && getPartner(birth).duringLifeTime(time)? 
-                getPartner(birth).snapFromFrame(time): 
-                null;
-        
+        SnapDefect partnerSnap
+                = hasPair(birth) && getPartner(birth).duringLifeTime(time)
+                ? getPartner(birth).snapFromFrame(time)
+                : null;
+
         return new PairSnDef(snapFromFrame(time), partnerSnap, birth);
     }
 
-    
     /**
-     * A stream of this defects snapsDefects together with their birth or 
-     * death pairs.
+     * A stream of this defects snapsDefects together with their birth or death
+     * pairs.
+     *
      * @param birth True for twin, false for spouses.
-     * @return A stream of this defects snapsDefects together with their birth 
+     * @return A stream of this defects snapsDefects together with their birth
      * or death pairs.
      */
-    public Stream<PairSnDef> defectPairs(boolean birth){
+    public Stream<PairSnDef> defectPairs(boolean birth) {
         return defectPairs(birth, Integer.MAX_VALUE);
     }
+
     /**
-     * A stream of this defects snapsDefects together with their birth or 
-     * death pairs.
+     * A stream of this defects snapsDefects together with their birth or death
+     * pairs.
+     *
      * @param birth True for twin, false for spouses.
-     * @param maxNumPairs There will be at most this many pairs from the event in the 
-     * stream.
-     * @return A stream of this defects snapsDefects together with their birth 
+     * @param maxNumPairs There will be at most this many pairs from the event
+     * in the stream.
+     * @return A stream of this defects snapsDefects together with their birth
      * or death pairs.
      */
-    public Stream<PairSnDef> defectPairs(boolean birth, int maxNumPairs) {        
-        return hasPair(birth)?
-                IntStream.range(
-                birth?0:Math.max(lifeCourse.length - maxNumPairs, 0), 
-                birth?Math.max(maxNumPairs, lifeCourse.length):lifeCourse.length)
+    public Stream<PairSnDef> defectPairs(boolean birth, int maxNumPairs) {
+        return hasPair(birth)
+                ? IntStream.range(
+                        birth ? 0 : Math.max(lifeCourse.length - maxNumPairs, 0),
+                        birth ? Math.max(maxNumPairs, lifeCourse.length) : lifeCourse.length)
                         .mapToObj(i -> snapPairFromFrame(getBirth().getTime() + i, birth))
                         .filter(sdp -> sdp.workingPair())
-                :Stream.of();
+                : Stream.of();
 
     }
 
     /**
      * Is this defects entire life course meant to be tracked.
-     * @return 
+     *
+     * @return
      */
-    public boolean followingLifeCourse(){
+    public boolean followingLifeCourse() {
         return lifeCourse != null;
     }
-    
+
     /**
      * Sets the displacement angles of all the snap defects.
      */
-    public void setDisplacementAngles(){
-        if(lifeCourse.length <= 1) return;
+    public void setDisplacementAngles() {
+        if (lifeCourse.length <= 1) return;
         IntStream.range(1, lifeCourse.length - 1)
                 .filter(i -> lifeCourse[i] != null)
                 .forEach(i -> lifeCourse[i].setVelocity(lifeCourse[i - 1], lifeCourse[i + 1]));
-       lifeCourse[0].setVelocity(null, lifeCourse[1]);
-       lifeCourse[lifeCourse.length - 1].setVelocity(lifeCourse[lifeCourse.length - 2], null);
+        lifeCourse[0].setVelocity(null, lifeCourse[1]);
+        lifeCourse[lifeCourse.length - 1].setVelocity(lifeCourse[lifeCourse.length - 2], null);
     }
-    
+
     /**
      * The distance from the location this defect was created.
+     *
      * @param timeFromBirth The time afterbirth the distance is to be taken.
      * @return The distance from the place of birth.
      */
-    public double displacement(int timeFromBirth){
+    public double displacement(int timeFromBirth) {
         return birth.dist(snapFromEvent(timeFromBirth, DefectManager.BIRTH));
     }
-    
+
     /**
-     * Checks to see if all snap defects in this defect are fused up, or 
-     * if they are all fused down.
-     * @return False if there are both some fused up and some fused down,
-     * true otherwise.
+     * Checks to see if all snap defects in this defect are fused up, or if they
+     * are all fused down.
+     *
+     * @return False if there are both some fused up and some fused down, true
+     * otherwise.
      */
-    public double fuseUpConsistent(){
-        
+    public double fuseUpConsistent() {
+
         long numFuseUps = defectPairs(DefectManager.DEATH).filter(pair -> pair.fuseUp()).count();
         long numFuseDown = defectPairs(DefectManager.DEATH).filter(pair -> !pair.fuseUp()).count();
-        return (double)Math.max(numFuseDown, numFuseUps)/(numFuseDown + numFuseUps);
-        
-        
+        return (double) Math.max(numFuseDown, numFuseUps) / (numFuseDown + numFuseUps);
+
     }
-    
-    
+
     /**
      * Sets the pair for the lonely defect.
+     *
      * @param birth Does lonely need a twin or a spouse.
      * @param possibles All the possible defects that might be good pairs.
      * @param dm The defect manager that can find a pair for this defect.
      */
-    public void setPair(boolean birth, Set<Defect> possibles, DefectManager dm){
-        if (!dm.nearEdge(this, birth)) 
-                setPair(birth, dm.getPair(this, possibles, birth));
+    public void setPair(boolean birth, Set<Defect> possibles, DefectManager dm) {
+        if (!dm.nearEdge(this, birth))
+            setPair(birth, dm.getPair(this, possibles, birth));
     }
- 
 
     /**
      * The life course of this defect.
+     *
      * @return The life course of this defect.
      */
     public List<SnapDefect> getLifeCourse() {
         return Arrays.asList(lifeCourse);
     }
-    
-    
+
+    /**
+     * Gives a stream of the AnglesPRel for pairs of this defect.
+     *
+     * @param birth True for twin pairs, false for spouse pairs.
+     * @param limitTimeFromEvent The time limit from the event.
+     * @return A stream of angles between this defects tail and its pair.
+     */
+    public Stream<Angle> AnglesPRel(boolean birth, int limitTimeFromEvent) {
+        return defectPairs(birth, limitTimeFromEvent).map(pair -> pair.anglePRel());
+    }
+
+    /**
+     * The average of the anlgePRel
+     * @param birth average for birth or death.
+     * @param limitTimeFromEvent The proximity to the event to consider.
+     * @return The average angle.
+     */
+    public Angle avgAnglePRel(boolean birth, int limitTimeFromEvent) {
+        return hasPair(birth)
+                ? Angle.average(AnglesPRel(birth, limitTimeFromEvent)) : Angle.NaN;
+    }
+
     /**
      * The standard deviation of this defects pairs' anglePRel
+     *
      * @param birth Birth pairs or death pairs.
-     * @param limitTimeFromEvent How long should the standard deviation be taken 
+     * @param limitTimeFromEvent How long should the standard deviation be taken
      * over? If the event is a birth, elements past the limit will be ignored.
      * If the event is a death, elements before the limit will be ignored.
      * @return The standard deviation of this defects pairs' anglePRel
      */
-    public double stdDevAnglePRel(boolean birth, int limitTimeFromEvent){
-        
-        if(hasPair(birth))            
-            return Angle.stdDev(() -> 
-                    defectPairs(birth, limitTimeFromEvent)
-                            .map(pair -> pair.anglePRel())
-            );
-                
-        return Double.NaN;
+    public double stdDevAnglePRel(boolean birth, int limitTimeFromEvent) {
+
+        return hasPair(birth) ? Angle.stdDev(()
+                -> AnglesPRel(birth, limitTimeFromEvent)
+        ) : Double.NaN;
     }
-    
-    
+
 }

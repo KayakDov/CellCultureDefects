@@ -335,6 +335,16 @@ public class DefectManager {
     public Stream<Defect> positives() {
         return posDefects.stream();
     }
+    
+    /**
+     * Positive defects that have a pair.
+     * @param birth true for twin, false for spouse.
+     * @return Positive defects that have a pair.
+     */
+    public Stream<Defect> pairedPos(boolean birth){
+        return positives().filter(def -> def.hasPair(birth));
+    }
+        
 
     /**
      * All the pairs for all the defects.
