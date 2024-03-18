@@ -1,7 +1,7 @@
 package ReadWrite;
 
 import GeometricTools.Rectangle;
-import defectsManagement.DefectManager;
+import defectManagement.DefectManager;
 import snapDefects.NegSnapDefect;
 import snapDefects.PosSnapDefect;
 import snapDefects.SnapDefect;
@@ -45,10 +45,11 @@ public class ReadManager {
     /**
      * An instance with the default file specs.
      * @param fileName The name of the file with default column headers.
+     * @param window The window the snap defects must be in.
      * @return A File format with default column names.
      */
-    public static ReadManager defaultFileFormat(String fileName) {
-        return new ReadManager("x_img", "y_img", "TRACK_ID", "POSITION_T", "charge", "ang1", ',', Rectangle.COORD_PLANE, fileName);
+    public static ReadManager defaultFileFormat(String fileName, Rectangle window) {
+        return new ReadManager("x_img", "y_img", "TRACK_ID", "POSITION_T", "charge", "ang1", ',', window, fileName);
     }
 
     public final int x, y, id, time, angle1, charge;

@@ -1,7 +1,7 @@
 package ReadWrite;
 
 import GeometricTools.Vec;
-import SnapManagement.SnapDefectPair;
+import SnapManagement.PairSnDef;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -46,7 +46,7 @@ public class FormatedFileWriter extends BufferedWriter {
      *
      * @param sdp The snap defect to get a line.
      */
-    public void writeLine(SnapDefectPair sdp) {
+    public void writeLine(PairSnDef sdp) {
 
         try {
             write(Arrays.stream(cols)
@@ -64,7 +64,7 @@ public class FormatedFileWriter extends BufferedWriter {
     public static class Column {
 
         public final String name;
-        private final Function<SnapDefectPair, String> f;
+        private final Function<PairSnDef, String> f;
 
         /**
          * Constructs a column.
@@ -72,7 +72,7 @@ public class FormatedFileWriter extends BufferedWriter {
          * @param name The name of the column.
          * @param f The tool for computing elements of the column
          */
-        public Column(String name, Function<SnapDefectPair, String> f) {
+        public Column(String name, Function<PairSnDef, String> f) {
             this.name = name;
             this.f = f;
         }

@@ -57,18 +57,15 @@ public class Rectangle {
                 y < this.y + height;
     }
     
- 
     /**
-     * A rectangle representing the entire coordinate plane.
+     * Is the proffered point inside the rectangle and near the edge?
+     * If the point is outside the rectangle then the behaivure is undefined.
+     * @param vec A point inside the rectangle that might or might not be near the edge.
+     * @param nearness How far from the edge the proffered point can be.
+     * @return True if vec is near the edge, false otherwise.
      */
-    public final static Rectangle COORD_PLANE = new Rectangle(
-            Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, 
-            Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY){
-              
-        @Override
-        public boolean contains(double x, double y){
-            return true;
-        }
-        
-    };
+    public boolean nearEdge(Vec vec, double nearness){
+        return vec.getX() < x + nearness || vec.getX() > x + width - nearness ||
+                vec.getY()< y + nearness || vec.getY() > y + height - nearness;
+    }
 }

@@ -1,7 +1,7 @@
 package snapDefects;
 
 import GeometricTools.Vec;
-import defectsManagement.hasChargeID;
+import defectManagement.hasChargeID;
 
 
 /**
@@ -41,20 +41,12 @@ public abstract class SnapDefect extends SpaceTemp implements hasChargeID {
         this.id = id;
     }
 
-    /**
-     * Gets the ID of this defect.
-     *
-     * @return The ID of the defect.
-     */
+    @Override
     public int getID() {
         return id;
     }
 
-    /**
-     * Gets the charge of this defect.
-     *
-     * @return true if the defect has a positive charge, false otherwise.
-     */
+    @Override
     public abstract boolean getCharge();
 
     public boolean equals(SnapDefect sd) {
@@ -108,6 +100,13 @@ public abstract class SnapDefect extends SpaceTemp implements hasChargeID {
     public Vec getVelocity() {
         return dxdt;
     }
+
+    @Override
+    public String toString() {
+        return super.toString() + ", charge = " + (getCharge()?"pos":"neg") + ", id = " + getID(); 
+    }
+    
+    
     
     
 }

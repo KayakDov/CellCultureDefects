@@ -68,32 +68,14 @@ public class Vec {
     }
     
     /**
-     * The sum of the two vectors.
+     * The plus of the two vectors.
      * @param vec The other vector.
-     * @return A new vector that is the sum of the two vectors.
+     * @return A new vector that is the plus of the two vectors.
      */
-    public Vec sum(Vec vec){
+    public Vec plus(Vec vec){
         return new Vec(x + vec.x, y + vec.y);
     }
-    
-    /**
-     * Places an angle between 0 and 2pi.
-     * @param posOrNegAngle An angle that may be positive or negative.
-     * @return An angle between 0 and 2 pi.
-     */
-    public static double posAngle(double posOrNegAngle){
-        if(posOrNegAngle >= 2*Math.PI) return posOrNegAngle % (2*Math.PI);
-        if(posOrNegAngle < 0) return 2*Math.PI + posOrNegAngle%(2*Math.PI);
-        return posOrNegAngle;
-    }
-    
-    /**
-     * The angle of this vector relative to the x axis.
-     * @return The angle of this vector.
-     */
-    public double angle(){
-        return posAngle(Math.atan2(y, x));
-    }
+        
     /**
      * Calculates the distance between this location and another location.
      * @param loc The other location.
@@ -154,4 +136,17 @@ public class Vec {
         hash = 19 * hash + (int) (Double.doubleToLongBits(this.y) ^ (Double.doubleToLongBits(this.y) >>> 32));
         return hash;
     }
+    
+    /**
+     * The angle of this vector.
+     * @return The angle of this vector.
+     */
+    public Angle angle(){
+        return new Angle(this);
+    }
+    
+    /**
+     * The origin.
+     */
+    public static Vec origin = new Vec(0, 0);
 }

@@ -1,5 +1,7 @@
 package snapDefects;
 
+import SnapManagement.Defect;
+
 /**
  * A positive SnapDefect.
  * @author E. Dov Neimand
@@ -36,5 +38,17 @@ public class PosSnapDefect extends SnapDefect{
     }
     
     
+    
+    /**
+     * Is this defect near another defect during a birth or death event?
+     *
+     * @param other The other defect.
+     * @param dist The distance from one to the other in the plane.
+     * @param time The distance from one to the other in time.
+     * @return True if the defects are near each other, false otherwise.
+     */
+    public boolean near(NegSnapDefect other, double dist, int time) {
+        return dist(other) < dist && Math.abs(getTime() - other.getTime()) < time;
+    }
     
 }

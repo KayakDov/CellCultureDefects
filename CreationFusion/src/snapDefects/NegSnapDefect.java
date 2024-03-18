@@ -6,7 +6,7 @@ package snapDefects;
  */
 public class NegSnapDefect extends SnapDefect{
     
-    private double[] tailAngles;
+    private final double[] tailAngles;
     
     /**
      * A negative SnapDefect.

@@ -71,4 +71,11 @@ public class SpaceTemp extends Vec {
     public boolean near(SpaceTemp st, double distThreshold, double timeThreshold) {
         return dist(st) <= distThreshold && Math.abs(time - st.time) <= timeThreshold;
     }
+
+    @Override
+    public String toString() {
+        return super.toString() + ", t = " + getTime();
+    }
+    
+    
 }
