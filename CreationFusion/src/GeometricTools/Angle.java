@@ -61,7 +61,7 @@ public class Angle {
      */
     @Override
     public String toString() {
-        return "" + rad();
+        return "" + rad()/Math.PI + "*pi";
     }
     
     /**

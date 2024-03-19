@@ -353,10 +353,16 @@ public class Defect implements hasChargeID {
      * or death pairs.
      */
     public Stream<PairSnDef> defectPairs(boolean birth, int maxNumPairs) {
-        return hasPair(birth)
-                ? IntStream.range(
-                        birth ? 0 : Math.max(lifeCourse.length - maxNumPairs, 0),
-                        birth ? Math.max(maxNumPairs, lifeCourse.length) : lifeCourse.length)
+        int start, end;
+        if(birth){
+            start = 0;
+            end = Math.min(maxNumPairs, lifeCourse.length);
+        }else{
+            start = Math.max(lifeCourse.length - maxNumPairs, 0);
+            end = lifeCourse.length;
+        }
+        return hasPair(birth) ? 
+                IntStream.range(start, end)
                         .mapToObj(i -> snapPairFromFrame(getBirth().getTime() + i, birth))
                         .filter(sdp -> sdp.workingPair())
                 : Stream.of();

@@ -5,18 +5,12 @@ import snapDefects.SpaceTemp;
 import GeometricTools.Rectangle;
 import ReadWrite.ReadManager;
 import ReadWrite.FormatedFileWriter;
-import SnapManagement.Defect;
-import dataTools.stdDev;
 import defectManagement.DefectManager;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.DoubleStream;
-import snapDefects.SnapDefect;
 
 /**
  *
@@ -153,11 +147,12 @@ public class Main {
 
         ReadManager rm = ReadManager.defaultFileFormat("PlusAndMinusTM.csv", new Rectangle(900, 0, 900, 900));
 
-        DefectManager dm = new DefectManager(rm, 2, 30, 6, 10);
+        DefectManager dm = new DefectManager(rm, 2, 10, 6, 10);
 
         dm.loadLifeCourses();
                 
-        System.out.println(Angle.average(dm.pairedPos(false).map(pos -> pos.avgAnglePRel(true, 20))).deg());
+        System.out.println(Angle.average(dm.pairedPos(false).map(pos -> pos.avgAnglePRel(false, 20))));
+        System.out.println(Angle.stdDev(() -> dm.pairedPos(false).map(pos -> pos.avgAnglePRel(false, 20)))/Math.PI + " pi");
         
 
 //        parseArgs(args);
@@ -165,20 +160,3 @@ public class Main {
 
 }
 
-
-/*[
-(1153.899953201433, 836.4295373908809), t = 0, charge = pos, id = 9, 
-(1155.8352648191753, 795.5147897261858), t = 1, charge = pos, id = 9, 
-(1157.7705764369177, 840.3261800256138), t = 2, charge = pos, id = 9, 
-(1157.7705764369177, 853.9644292471788), t = 3, charge = pos, id = 9, 
-(1163.5765112901452, 832.532894756148), t = 4, charge = pos, id = 9, 
-(1161.6411996724025, 822.7912881693159), t = 5, charge = pos, id = 9, 
-(1165.5118229078876, 826.6879308040487), t = 6, charge = pos, id = 9, 
-(1165.5118229078876, 840.3261800256138), t = 7, charge = pos, id = 9, null, null, 
-(1175.1883809965996, 838.3778587082473), t = 10, charge = pos, id = 9, 
-(1179.0590042320844, 832.532894756148), t = 11, charge = pos, id = 9, 
-(1177.123692614342, 828.6362521214152), t = 12, charge = pos, id = 9, 
-(1180.9943158498268, 820.8429668519494), t = 13, charge = pos, id = 9, 
-(1186.8002507030542, 818.894645534583), t = 14, charge = pos, id = 9, 
-(1165.5118229078876, 776.0315765525214), t = 15, charge = pos, id = 9]
- */
