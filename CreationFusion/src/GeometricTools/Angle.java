@@ -11,14 +11,19 @@ import java.util.stream.Stream;
 public class Angle {
 
     private final double angle;
+    /**
+     * The length around the circle.  For regular unit circles this is by default set
+     * to 2pi.  For nematic angles this should be pi.
+     */
+    private final double circ = Math.PI * 2;
     
     /**
      * Places an angle between 0 and 2pi.
      * @param posOrNegRadians An angle that may be positive or negative.
      */
     public Angle(double posOrNegRadians) {
-        if (posOrNegRadians >= 2 * Math.PI) angle = posOrNegRadians % (2 * Math.PI);
-        else if (posOrNegRadians < 0)angle =  2 * Math.PI + posOrNegRadians % (2 * Math.PI);
+        if (posOrNegRadians >= circ) angle = posOrNegRadians % circ;
+        else if (posOrNegRadians < 0)angle =  circ + posOrNegRadians % circ;
         else angle = posOrNegRadians;
     }
     
@@ -48,11 +53,11 @@ public class Angle {
     }
     
     /**
-     * This angle in degrees.
+     * This angle in degrees from 0 to 360.
      * @return This angle in degrees.
      */
     public double deg(){
-        return 360*angle/(2*Math.PI);
+        return 360*angle/circ;
     }
 
     /**
@@ -73,9 +78,10 @@ public class Angle {
     }
     
     /**
-     * The average of the angles.
-     * @param angles
-     * @return
+     * The average of the angles.  For nematic angles, be sure to double them 
+     * before calculating the average, and then halve the result.
+     * @param angles The angles to be averaged.
+     * @return The circular average of the angles.
      */
     public static Angle average(Stream<Angle> angles){
         return new Angle(angles.map(ang -> ang.vec()).reduce(Vec.origin, (a, b) -> a.plus(b)));
@@ -110,8 +116,26 @@ public class Angle {
     }
     
     /**
+     * The difference of this angle and another angle.
+     * @param ang The other angle.
+     * @return The difference of this angle and another angle.
+     */
+    public Angle minus(Angle ang){
+        return new Angle(rad() - ang.rad());
+    }
+    
+    /**
      *
      */
     public static Angle NaN = new Angle(Double.NaN);
+    
+    /**
+     * A new angle that is this angle multiplied by a scalar;
+     * @param t The scalar
+     * @return A new angle.
+     */
+    public Angle mult(double t){
+        return new Angle(rad() * t);
+    }
     
 }

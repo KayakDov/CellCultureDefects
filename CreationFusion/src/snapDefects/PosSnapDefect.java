@@ -1,6 +1,6 @@
 package snapDefects;
 
-import SnapManagement.Defect;
+import GeometricTools.Angle;
 
 /**
  * A positive SnapDefect.
@@ -8,7 +8,8 @@ import SnapManagement.Defect;
  */
 public class PosSnapDefect extends SnapDefect{
     
-    private double angle;
+    private Angle tailAngle;
+    private Angle dThetadt;
     
     /**
      * A positive SnapDefect.
@@ -20,7 +21,7 @@ public class PosSnapDefect extends SnapDefect{
      */
     public PosSnapDefect(double x, double y, int t, int id, double angle) {
         super(x, y, t, id);
-        this.angle = angle;
+        this.tailAngle = new Angle(angle);
     }
 
     @Override
@@ -33,8 +34,8 @@ public class PosSnapDefect extends SnapDefect{
      * angle of a vector pointing toward the tail of the defect.
      * @return The angle of the snap defect relative to the x axis.
      */
-    public double tailAngle() {
-        return angle;
+    public Angle tailAngle() {
+        return tailAngle;
     }
     
     
@@ -48,7 +49,19 @@ public class PosSnapDefect extends SnapDefect{
      * @return True if the defects are near each other, false otherwise.
      */
     public boolean near(NegSnapDefect other, double dist, int time) {
-        return dist(other) < dist && Math.abs(getTime() - other.getTime()) < time;
+        return loc.dist(other.loc) < dist && Math.abs(loc.getTime() - other.loc.getTime()) < time;
     }
     
+    /**
+     * Sets the angular velocity.
+     * @param prev The previous snap defect
+     * @param next the next snap defect
+     */
+    @Override
+    public void setAngleVelocity(SnapDefect prev, SnapDefect next) {       
+        
+        dThetadt = ((PosSnapDefect)next).tailAngle.minus(((PosSnapDefect)prev).tailAngle)
+                .mult(1.0/(next.loc.getTime() - prev.loc.getTime()));
+    }
+        
 }

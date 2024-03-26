@@ -114,23 +114,24 @@ public class Main {
      */
     public static void parseArgs(String[] args) {
 
-//        args = new String[11];
-//        args[0] = "PlusAndMinusTM.csv";
-//        args[1] = "RPE1_pairs.csv";
-//        args[2] = "window";
-//        args[3] = "900";
-//        args[4] = "0";
-//        args[5] = "1800";
-//        args[6] = "900";
-//        args[7] = "threshold";
-//        args[8] = "3";
-//        args[9] = "35";
-//        args[10] = "5";
-//        args[11] = "50";
+        args = new String[12];
+        args[0] = "PlusAndMinusTM.csv";
+        args[1] = "RPE1_pairs.csv";
+        args[2] = "window";
+        args[3] = "900";
+        args[4] = "0";
+        args[5] = "900";
+        args[6] = "900";
+        args[7] = "threshold";
+        args[8] = "35";
+        args[9] = "3";
+        args[10] = "50";
+        args[11] = "5";
+        
         ReadManager ff = ReadManager.defaultFileFormat(args[0], getWindow(args));
 
         DefectManager dm = new DefectManager(ff, timeThreshold(args), distThreshold(args), timeEdge(args), distEdge(args));
-
+        
         dm.loadLifeCourses();
 
         FormatedFileWriter ffw = FormatedFileWriter.defaultWriter(args[1]);
@@ -142,20 +143,28 @@ public class Main {
 
     /**
      * @param args the command line arguments
+     * @throws java.io.IOException
      */
     public static void main(String[] args) throws IOException {
 
-        ReadManager rm = ReadManager.defaultFileFormat("PlusAndMinusTM.csv", new Rectangle(900, 0, 900, 900));
-
-        DefectManager dm = new DefectManager(rm, 2, 10, 6, 10);
-
-        dm.loadLifeCourses();
-                
-        System.out.println(Angle.average(dm.pairedPos(false).map(pos -> pos.avgAnglePRel(false, 20))));
-        System.out.println(Angle.stdDev(() -> dm.pairedPos(false).map(pos -> pos.avgAnglePRel(false, 20)))/Math.PI + " pi");
+//        ReadManager rm = ReadManager.defaultFileFormat("PlusAndMinusTM.csv", new Rectangle(900, 0, 900, 900));
+//
+//        DefectManager dm = new DefectManager(rm, 2, 10, 6, 45);
+//        
+//        
+//
+//        dm.loadLifeCourses();
+//        
+//        
+//        System.out.println(dm.pairedPos(DefectManager.DEATH).mapToDouble(pos -> pos.fuseUpConsistent(DefectManager.DEATH, 10)).average());//TODO: fix fuse uyp to average
+//        
+//        boolean event = DefectManager.DEATH;
+//                
+//        System.out.println(Angle.average(dm.pairedPos(event).map(pos -> pos.avgAnglePRel(event, 20))));
+//        System.out.println(Angle.stdDev(() -> dm.pairedPos(event).map(pos -> pos.avgAnglePRel(event, 20)))/Math.PI + " pi");
         
 
-//        parseArgs(args);
+        parseArgs(args);
     }
 
 }

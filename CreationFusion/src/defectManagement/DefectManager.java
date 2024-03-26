@@ -7,6 +7,7 @@ import SnapManagement.PairSnDef;
 import snapDefects.SnapDefect;
 import ReadWrite.ReadManager;
 import GeometricTools.Rectangle;
+import SnapManagement.PosDefect;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -29,7 +30,7 @@ import java.util.stream.StreamSupport;
  */
 public class DefectManager {
 
-    private DefectSet posDefects, negDefects;
+    private final DefectSet posDefects, negDefects;
     private ReadManager readManager;
     private int timeProx, timeEdge;
     private double distProx, distEdge;
@@ -56,7 +57,10 @@ public class DefectManager {
                 .mapToObj(i -> i==1).parallel()
                 .collect(Collectors.toMap(
                         charge -> charge, 
-                        charge -> new DefectSet(maxID(charge) + 1, charge)
+                        charge -> {
+                            int size = maxID(charge) + 1;
+                            return charge? new PosDefectSet(size): new NegDefectSet(size);
+                        }
                 ));
 
         this.posDefects = defectSets.get(POS);
@@ -126,7 +130,7 @@ public class DefectManager {
      * @param charge The charge of the desired defects.
      * @return A stream of defects of the desired charge.
      */
-    public Stream<Defect> defectStream(boolean charge) {
+    public Stream<? extends Defect> defectStream(boolean charge) {
         return charge ? positives() : negatives();
     }
 
@@ -332,7 +336,7 @@ public class DefectManager {
      *
      * @return All the positive defects.
      */
-    public Stream<Defect> positives() {
+    public Stream<PosDefect> positives() {
         return posDefects.stream();
     }
     
@@ -341,7 +345,7 @@ public class DefectManager {
      * @param birth true for twin, false for spouse.
      * @return Positive defects that have a pair.
      */
-    public Stream<Defect> pairedPos(boolean birth){
+    public Stream<PosDefect> pairedPos(boolean birth){
         return positives().filter(def -> def.hasPair(birth));
     }
         
@@ -544,7 +548,9 @@ public class DefectManager {
         
         loadDefects();
 
-        all().parallel().forEach(def -> def.setDisplacementAngles());
+        all().parallel().forEach(def -> def.setVelocities());
+        
+        setFuseUp(Integer.MAX_VALUE);
 
     }
 
@@ -574,5 +580,13 @@ public class DefectManager {
                         .mapToDouble(pos -> pos.stdDevAnglePRel(birth, limitFromEvent))
                         .average()
                         .getAsDouble();
+    }
+    
+    /**
+     * Will set all positive defects to be fuse up or down.
+     * @param timePeriod Over how long from the event is the average taken.
+     */
+    public void setFuseUp(int timePeriod){
+        positives().parallel().forEach(def -> def.setFuseUp(timePeriod));
     }
 }

@@ -55,7 +55,7 @@ public class Frame {
      * time, false otherwise.
      */
     public boolean confirmIntegrity(){
-        return allDefects().allMatch(def -> def.getTime() == time);
+        return allDefects().allMatch(def -> def.loc.getTime() == time);
     }
 
     /**

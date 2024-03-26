@@ -5,10 +5,8 @@ import SnapManagement.PairSnDef;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.Function;
-import java.util.function.ToDoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -89,37 +87,37 @@ public class FormatedFileWriter extends BufferedWriter {
             return new FormatedFileWriter(
                     fileName,
                     ',',
-                    new Column("FRAME", sdp -> sdp.pos.getTime() + ""),
+                    new Column("FRAME", sdp -> sdp.pos.loc.getTime() + ""),
                     new Column("plus_id", sdp -> sdp.pos.getID() + ""),
-                    new Column("xp", sdp -> sdp.pos.getX() + ""),
-                    new Column("yp", sdp -> sdp.pos.getY() + ""),
-                    new Column("angp1", sdp -> sdp.pos.tailAngle() + ""),
+                    new Column("xp", sdp -> sdp.pos.loc.getX() + ""),
+                    new Column("yp", sdp -> sdp.pos.loc.getY() + ""),
+                    new Column("angp1", sdp -> sdp.pos.tailAngle().rad() + ""),
                     new Column("min_id", sdp -> sdp.neg.getID() + ""),
-                    new Column("xm", sdp -> sdp.neg.getX() + ""),
-                    new Column("ym", sdp -> sdp.neg.getY() + ""),
-                    new Column("angm1", sdp -> sdp.neg.tailAngle()[0] + ""),
-                    new Column("angm2", sdp -> sdp.neg.tailAngle()[1] + ""),
-                    new Column("angm3", sdp -> sdp.neg.tailAngle()[2] + ""),
+                    new Column("xm", sdp -> sdp.neg.loc.getX() + ""),
+                    new Column("ym", sdp -> sdp.neg.loc.getY() + ""),
+                    new Column("angm1", sdp -> sdp.neg.tailAngle()[0].rad() + ""),
+                    new Column("angm2", sdp -> sdp.neg.tailAngle()[1].rad() + ""),
+                    new Column("angm3", sdp -> sdp.neg.tailAngle()[2].rad() + ""),
                     new Column("distance", sdp -> sdp.dist() + ""),
-                    new Column("mp_angle", sdp -> sdp.mpAngle() + ""),
-                    new Column("angp1_rel", sdp -> sdp.anglePRel() + ""),
-                    new Column("angm1_rel", sdp -> sdp.ang123Rel()[0] + ""),
-                    new Column("angm2_rel", sdp -> sdp.ang123Rel()[1] + ""),
-                    new Column("angm3_rel", sdp -> sdp.ang123Rel()[2] + ""),
-                    new Column("fuse_up", sdp -> sdp.fuseUp()?"TRUE":"FALSE"),
+                    new Column("mp_angle", sdp -> sdp.mpAngle().rad() + ""),
+                    new Column("angp1_rel", sdp -> sdp.anglePRel().rad() + ""),
+                    new Column("angm1_rel", sdp -> sdp.ang123Rel()[0].rad() + ""),
+                    new Column("angm2_rel", sdp -> sdp.ang123Rel()[1].rad() + ""),
+                    new Column("angm3_rel", sdp -> sdp.ang123Rel()[2].rad() + ""),
+                    new Column("fuse_up", sdp -> sdp.fuseUp?"TRUE":"FALSE"),
                     new Column("p_vel_angle", sdp -> {
                         Vec vel = sdp.pos.getVelocity();
-                        return (vel!=null? vel.angle():"") + "";
+                        return (vel!=null? vel.angle().rad():"") + "";
                     }),
                     new Column("p_vel_angle_rel", sdp -> {
                         Vec vel = sdp.relVelocity();
-                        return vel != null?vel.angle() + "":"";}),
-                    new Column("anglep1_rel_vel_angle", sdp -> sdp.anglep1_rel_vel_angle() + ""), 
+                        return vel != null?vel.angle().rad() + "":"";}),
+                    new Column("anglep1_rel_vel_angle", sdp -> sdp.anglep1_rel_vel_angle().rad() + ""), 
                     new Column("fusion", sdp -> !sdp.birth?"TRUE":"FALSE"),
                     new Column("creation", sdp -> sdp.birth?"TRUE":"FALSE"),
-                    new Column("mp_angl1", sdp -> sdp.mp123()[0] + ""),
-                    new Column("mp_angl2", sdp -> sdp.mp123()[1] + ""),
-                    new Column("mp_angl3", sdp -> sdp.mp123()[2] + ""),
+                    new Column("mp_angl1", sdp -> sdp.mp123()[0].rad() + ""),
+                    new Column("mp_angl2", sdp -> sdp.mp123()[1].rad() + ""),
+                    new Column("mp_angl3", sdp -> sdp.mp123()[2].rad() + ""),
                     new Column("mp_phase", sdp -> sdp.mpPhase() + "")
             );
         } catch (IOException ex) {

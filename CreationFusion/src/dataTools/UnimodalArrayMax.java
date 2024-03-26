@@ -63,6 +63,8 @@ public class UnimodalArrayMax extends RecursiveTask<Integer> {
 
         if (inRight == inLeft)
             return array[inLeft] > array[inRight] ? inLeft : inRight;
+        
+        
 
         return array[inLeft] < array[inRight]
                 ? argMax(inLeft, inRight, rightProbe(inLeft, inRight, outRight), outRight, array) //bring left side int
@@ -71,17 +73,18 @@ public class UnimodalArrayMax extends RecursiveTask<Integer> {
     }
     
     /**
-     * Finds the argMax of a unimodal array.
+     * Finds the argMax of a unimodal array.  That is, the index of the maximum 
+     * value of the array.
      * @param array The unimodal array.
-     * @return The argm max of the array.
+     * @return The argm max of the array. 
      */
     public static int argMax(double[] array){
-        
+                
         if (array.length > 1) {
             if (array[0] > array[1]) return 0;
             if (array[array.length - 1] > array[array.length - 2])
                 return array.length - 1;
-        }
+        } else return 0;
 
         int n = array.length;
 
@@ -95,7 +98,7 @@ public class UnimodalArrayMax extends RecursiveTask<Integer> {
     }
 
     @Override
-    protected Integer compute() {
+    public Integer compute() {
         return argMax(arr);
     }
 

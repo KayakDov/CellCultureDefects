@@ -87,7 +87,7 @@ public class FrameIterator implements Iterator<Frame> {
          * otherwise.
          */
         private boolean isNow(SnapDefect sd) {
-            return sd.getTime() == time;
+            return sd.loc.getTime() == time;
         }
 
         @Override
