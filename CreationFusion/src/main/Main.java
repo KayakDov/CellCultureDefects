@@ -48,7 +48,7 @@ public class Main {
     private static Rectangle getWindow(String[] args) {
         int windowIndex = ReadManager.indexOf(args, "window");
         if (windowIndex == -1)
-            throw new RuntimeException("You need the runtime argument window [x] [y] [wifth] [height]");
+            throw new RuntimeException("You need the runtime argument window [x] [y] [width] [height]");
 
         double x = Double.parseDouble(args[windowIndex + 1]);
         double y = Double.parseDouble(args[windowIndex + 2]);

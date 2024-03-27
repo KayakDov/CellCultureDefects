@@ -6,11 +6,11 @@ import SnapManagement.Frame;
 import SnapManagement.PairSnDef;
 import snapDefects.SnapDefect;
 import ReadWrite.ReadManager;
-import GeometricTools.Rectangle;
 import SnapManagement.PosDefect;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -18,9 +18,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -30,6 +27,7 @@ import java.util.stream.StreamSupport;
  */
 public class DefectManager {
 
+    private final List<SnapDefect> snaps;
     private final DefectSet posDefects, negDefects;
     private ReadManager readManager;
     private int timeProx, timeEdge;
@@ -46,43 +44,29 @@ public class DefectManager {
      * events closer than this threshold to be considered a pair.
      * @param timeThreshold Two defects must have their creation or annihilation
      * times closer than this threshold to be considered a pair.
-     * @param timeEdge The time an event must be from the beginning or end of time.
+     * @param timeEdge The time an event must be from the beginning or end of
+     * time.
      * @param distEdge The distance an event must be from the edge of the frame.
      */
     public DefectManager(ReadManager fileFormat, int timeThreshold, double distThreshold, int timeEdge, double distEdge) {
 
         this.readManager = fileFormat;
 
-        Map<Boolean, DefectSet> defectSets = IntStream.range(0, 2)
-                .mapToObj(i -> i==1).parallel()
-                .collect(Collectors.toMap(
-                        charge -> charge, 
-                        charge -> {
-                            int size = maxID(charge) + 1;
-                            return charge? new PosDefectSet(size): new NegDefectSet(size);
-                        }
-                ));
-
-        this.posDefects = defectSets.get(POS);
-        this.negDefects = defectSets.get(NEG);
-
         setThresholds(timeThreshold, distThreshold, timeEdge, distEdge);
+
+        snaps = new ArrayList<>((int) readManager.lines().parallel().count());
+        readManager.snapDefects().filter(snap -> snap.isTracked()).forEachOrdered(snap -> snaps.add(snap));
+
+        var maxID = maxID();
+
+        this.posDefects = new PosDefectSet(maxID.get(POS) + 1);
+        this.negDefects = new NegDefectSet(maxID.get(NEG) + 1);
 
         loadDefects();
 
         pairDefects();
     }
 
-    /**
-     * Sets the DefectManager to only look at a specific window of defects.
-     *
-     * @param rect Defects outside this rectangle will be ignored.
-     * @return this.
-     */
-    public DefectManager setWindow(Rectangle rect) {
-        readManager.setWindow(rect);
-        return this;
-    }
 
     /**
      * An internal integrity check method. Checks if each defect is stored
@@ -164,23 +148,15 @@ public class DefectManager {
         HashSet<Integer> defects = new HashSet<>(size());
         ArrayList<Integer> orderOfAppearence = new ArrayList<>(defects(charge).size());
 
-        try (ReadManager.Reader br = readManager.getReader(charge)) {
-            SnapDefect sd;
-
-            while ((sd = br.readSnapDefect()) != null) {
-
-                if (sd.isTracked() && !defects.contains(sd.getID())) {
-                    defects.add(sd.getID());
-                    orderOfAppearence.add(sd.getID());
-                }
+        snaps.forEach(sd -> {
+            if (sd.isTracked() && !defects.contains(sd.getID())) {
+                defects.add(sd.getID());
+                orderOfAppearence.add(sd.getID());
             }
+        });
 
-            return orderOfAppearence;
+        return orderOfAppearence;
 
-        } catch (IOException ex) {
-            Logger.getLogger(DefectManager.class.getName()).log(Level.SEVERE, null, ex);
-            throw new RuntimeException(ex);
-        }
     }
 
     /**
@@ -207,14 +183,14 @@ public class DefectManager {
     }
 
     /**
-     * Loads defects from the specified file. Sets their birthday and death days.
-     * If birth days and death days have already been set, then this method sets
-     * life courses.
+     * Loads defects from the specified file. Sets their birthday and death
+     * days. If birth days and death days have already been set, then this
+     * method sets life courses.
      *
      */
     public final void loadDefects() {
 
-        readManager.snapDefects()
+        snaps.stream().parallel()
                 .filter(SnapDefect::isTracked)
                 .forEach(sd -> defects(sd.getCharge()).add(sd));
     }
@@ -223,46 +199,38 @@ public class DefectManager {
      * Finds the positive and negative defects with the highest IDss in the
      * file.
      *
-     * @param charge The charge of the desired highest ID.
      * @return The highest posative and negative IDs in teh file. The first
      * index it the positive and the second index is the negative.
      */
-    public final int maxID(Boolean charge) {
-        
-        int maxID = 0;
+    public final Map<Boolean, Integer> maxID() {
 
-        try (ReadManager.Reader reader = readManager.getReader(charge)) {
+        Map<Boolean, Integer> maxID = new HashMap<>(2);
+        maxID.put(true, 0); maxID.put(false, 0);
 
-            String line;
-            
-            while ((line = reader.readLine()) != null)
-                
-                maxID = Math.max(readManager.IDFrom(line), maxID);
-            
-            return maxID;
+        readManager.snapDefects().filter(sn -> sn.isTracked()).forEach(sn -> {
+            if (sn.getID() > maxID.get(sn.getCharge()))
+                maxID.put(sn.getCharge(), sn.getID());
+        });
 
-        } catch (IOException ex) {
-            Logger.getLogger(DefectManager.class.getName()).log(Level.SEVERE, null, ex);
-            throw new RuntimeException(ex);
-        }
+        return maxID;
 
     }
 
     /**
-     * TODO: births should be measured near the end, and deaths can be measured near the begining
-     * Is the SnapDefect near the edge?
-     * @param def A defect whose birth or death will be checked for proximity to 
+     * Checks if a defects creation/annihilation is near an edge.
+     * @param def A defect whose birth or death will be checked for proximity to
      * the spacial and temporal edges.
-     * @param birth A birth can be near the end of time, but not the beginning, and vice versa for deaths.
+     * @param birth A birth can be near the end of time, but not the beginning,
+     * and vice versa for deaths.
      * @return True if the snap Defect is near the edge, false otherwise.
      */
-    public boolean nearEdge(Defect def, boolean birth){
+    public boolean nearEdge(Defect def, boolean birth) {
         SpaceTemp sd = def.get(birth);
-        return readManager.getWindow().nearEdge(sd, distEdge) ||
-                sd.getTime() < timeEdge || 
-                sd.getTime() > getEndTime() - timeEdge;
+        return readManager.getWindow().nearEdge(sd, distEdge)
+                || sd.getTime() < timeEdge
+                || sd.getTime() > getEndTime() - timeEdge;
     }
-        
+
     /**
      * Pairs defects based on proximity and time thresholds.
      */
@@ -286,7 +254,7 @@ public class DefectManager {
     public long getEndTime() {
         if (endTime == -1)
             if (posDefects.isEmpty())
-                return endTime = readManager.timeColumn().max().getAsInt();
+                return endTime = snaps.stream().mapToInt(snap-> snap.loc.getTime()).max().getAsInt();
             else
                 return endTime = all()
                         .mapToInt(def -> def.getDeath().getTime()).max().getAsInt();
@@ -301,7 +269,7 @@ public class DefectManager {
      * @throws IOException If an I/O error occurs while reading the file.
      */
     public double percentTracked() throws IOException {
-        return size()/readManager.lines().count();
+        return size() / readManager.lines().count();
     }
 
     /**
@@ -339,16 +307,16 @@ public class DefectManager {
     public Stream<PosDefect> positives() {
         return posDefects.stream();
     }
-    
+
     /**
      * Positive defects that have a pair.
+     *
      * @param birth true for twin, false for spouse.
      * @return Positive defects that have a pair.
      */
-    public Stream<PosDefect> pairedPos(boolean birth){
+    public Stream<PosDefect> pairedPos(boolean birth) {
         return positives().filter(def -> def.hasPair(birth));
     }
-        
 
     /**
      * All the pairs for all the defects.
@@ -389,7 +357,6 @@ public class DefectManager {
                 .orElse(null);
 
         if (closest != null) eligibles.remove(closest);
-        
 
         return closest;
     }
@@ -399,7 +366,7 @@ public class DefectManager {
      *
      * @param timeProx Another point is near this one if it is closer in time.
      * @param distProx Another point is near this one if it's closer in space.
-     * @param timeEdge How far a creation or annihilation event must be from the 
+     * @param timeEdge How far a creation or annihilation event must be from the
      * beginning or end of time.
      * @param distEdge How far an event must be from the edge of the frame.
      */
@@ -545,11 +512,11 @@ public class DefectManager {
     public void loadLifeCourses() {
 
         all().parallel().forEach(def -> def.prepForTracking());
-        
+
         loadDefects();
 
         all().parallel().forEach(def -> def.setVelocities());
-        
+
         setFuseUp(Integer.MAX_VALUE);
 
     }
@@ -557,36 +524,42 @@ public class DefectManager {
     /**
      * The mean square displacement of all the defects at the given time from
      * their births.
+     *
      * @param timeFromBirth The time from birth the displacement is taken over.
      * @return The mean square displacement at the given time.
      */
-    public double meanSquareDisplacement(int timeFromBirth){
+    public double meanSquareDisplacement(int timeFromBirth) {
         return all().parallel()
                 .filter(def -> timeFromBirth <= def.age())
                 .mapToDouble(def -> def.displacement(timeFromBirth))
-                .map(d -> d*d).sum()/size();
+                .map(d -> d * d).sum() / size();
     }
-    
+
     /**
-     * The average standard deviation of the anglePRel over all the positive defects.
+     * The average standard deviation of the anglePRel over all the positive
+     * defects.
+     *
      * @param birth True for twin pairs, false for spouse pairs.
      * @param minAge Only consider defects that live longer than this age.
-     * @param limitFromEvent Only consider angles closer in time to the desired event.
-     * @return The average standard deviation of the anglePRel over all the positive defects.
+     * @param limitFromEvent Only consider angles closer in time to the desired
+     * event.
+     * @return The average standard deviation of the anglePRel over all the
+     * positive defects.
      */
-    public double avgStdDevAngPRel(boolean birth, int minAge, int limitFromEvent){
+    public double avgStdDevAngPRel(boolean birth, int minAge, int limitFromEvent) {
         return positives().filter(pos -> pos.hasPair(birth))
-                        .filter(pos -> pos.age() > minAge)
-                        .mapToDouble(pos -> pos.stdDevAnglePRel(birth, limitFromEvent))
-                        .average()
-                        .getAsDouble();
+                .filter(pos -> pos.age() > minAge)
+                .mapToDouble(pos -> pos.stdDevAnglePRel(birth, limitFromEvent))
+                .average()
+                .getAsDouble();
     }
-    
+
     /**
      * Will set all positive defects to be fuse up or down.
+     *
      * @param timePeriod Over how long from the event is the average taken.
      */
-    public void setFuseUp(int timePeriod){
+    public void setFuseUp(int timePeriod) {
         positives().parallel().forEach(def -> def.setFuseUp(timePeriod));
     }
 }

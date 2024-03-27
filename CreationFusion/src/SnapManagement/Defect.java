@@ -346,7 +346,7 @@ public abstract class Defect implements hasChargeID {
         
         return hasPair(birth)
                 ? IntStream.range(lcr.start, lcr.end)
-                        .mapToObj(i -> pairFromBirth(i))
+                        .mapToObj(i -> snapPairFromFrame(getBirth().getTime() + i, birth))
                         .filter(sdp -> sdp.workingPair())
                 : Stream.of();
 
