@@ -123,5 +123,13 @@ public abstract class SnapDefect implements hasChargeID {
     public String toString() {
         return loc.toString() + ", charge = " + (getCharge() ? "pos" : "neg") + ", id = " + getID();
     }
+    
+    /**
+     * The time of this SnapDefect.
+     * @return The time of this SnapDefect.
+     */
+    public int getTime(){
+        return loc.getTime();
+    }
 
 }

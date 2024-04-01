@@ -4,13 +4,16 @@ import snapDefects.SnapDefect;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+import snapDefects.NegSnapDefect;
+import snapDefects.PosSnapDefect;
 
 /**
  * All the defects at a specific moment in time.
  * @author e. Dov Neimand
  */
 public class Frame {
-    private final Map<Integer, SnapDefect> posDefects, negDefects;
+    private final Map<Integer, PosSnapDefect> posDefects;
+    private final Map<Integer, NegSnapDefect> negDefects;
     public final int time;
 
     /**
@@ -19,7 +22,7 @@ public class Frame {
      * @param negDefects All the negative defects in the frame.
      * @param time The time all these defects were in this frame.
      */
-    public Frame(Map<Integer, SnapDefect> posDefects, Map<Integer, SnapDefect> negDefects, int time) {
+    public Frame(Map<Integer, PosSnapDefect> posDefects, Map<Integer, NegSnapDefect> negDefects, int time) {
         this.posDefects = posDefects;
         this.negDefects = negDefects;
         this.time = time;
@@ -45,7 +48,7 @@ public class Frame {
      * A stream of the positive defects.
      * @return A stream of the positive defects.
      */
-    public Stream<SnapDefect> positives(){
+    public Stream<PosSnapDefect> positives(){
         return posDefects.values().stream();
     }
     
@@ -71,7 +74,7 @@ public class Frame {
      * @param charge The type of map desired.
      * @return The positive or negative maps storing the SnapDefects in this frame.
      */
-    private Map<Integer, SnapDefect> map(boolean charge){
+    private Map<Integer, ? extends SnapDefect> map(boolean charge){
         return charge? posDefects : negDefects;
     }
     

@@ -3,13 +3,11 @@ package defectManagement;
 import SnapManagement.Frame;
 import snapDefects.SnapDefect;
 import ReadWrite.ReadManager;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.List;
+import snapDefects.NegSnapDefect;
+import snapDefects.PosSnapDefect;
 
 /**
  * Iterates through each of the frames of the formatted file in order.
@@ -18,15 +16,17 @@ import java.util.logging.Logger;
  */
 public class FrameIterator implements Iterator<Frame> {
 
-    private final ChargedFrameIterator pos, neg;
+    private final ChargedFrameIterator<PosSnapDefect> pos;
+    private final ChargedFrameIterator<NegSnapDefect> neg;
 
     /**
      * Constructs a frame iterator.
-     * @param fileFormat The file to be read from.
+     * @param posSnaps A chronologically ordered list of positive snap defects.
+     * @param negSnaps A chronologically ordered list of negative snap defects.
      */
-    public FrameIterator(ReadManager fileFormat) {
-        pos = new ChargedFrameIterator(fileFormat, DefectManager.POS);
-        neg = new ChargedFrameIterator(fileFormat, DefectManager.NEG);
+    public FrameIterator(List<PosSnapDefect> posSnaps, List<NegSnapDefect> negSnaps) {
+        pos = new ChargedFrameIterator(posSnaps);
+        neg = new ChargedFrameIterator(negSnaps);
     }
 
     @Override
@@ -44,85 +44,56 @@ public class FrameIterator implements Iterator<Frame> {
 
     /**
      * An iterator that runs over the snap defects of a specific charge.
+     * @param <Snap> Positive or negative snap defects.
      */
-    public static class ChargedFrameIterator implements Iterator<HashMap<Integer, SnapDefect>> {
+    public static class ChargedFrameIterator<Snap extends SnapDefect> implements Iterator<HashMap<Integer, Snap>> {
         
-        private ReadManager.Reader reader;
-        private int time;
-        private boolean hasNext;
-        private final boolean charge;
+        private int index;        
+        
+        private List<Snap> snapDefects;
 
         /**
          * Constructs an iterator that gives frame by frame from a file.
          *
-         * @param fileFormat The format of the file to be read from.
-         * @param charge Should this iterator read positive of negative charged
-         * defects?
+         * @param snapDefects A list of chronologically ordered snap defects.
          */
         @SuppressWarnings("empty-statement")
-        public ChargedFrameIterator(ReadManager fileFormat, boolean charge) {
-            
-            
-            this.charge = charge;
-            time = 0;
-            reader = fileFormat.getReader(charge);
-            
-            hasNext = reader.ready();
-
+        public ChargedFrameIterator(List<Snap> snapDefects) {
+            index = 0;
+            this.snapDefects = snapDefects;
         }
 
         @Override
         public boolean hasNext() {
-
-            return hasNext;
-
+            return index < snapDefects.size();
         }
 
 
-        /**
-         * Is this snap defect meant to be included in the current Frame.
-         *
-         * @param sd The SnapDefect in question.
-         * @return True if it's meant to be included in the current frame, false
-         * otherwise.
-         */
-        private boolean isNow(SnapDefect sd) {
-            return sd.loc.getTime() == time;
-        }
+        
 
         @Override
-        public HashMap<Integer, SnapDefect> next() {
+        public HashMap<Integer, Snap> next() {
 
-            HashMap<Integer, SnapDefect> snaps = new HashMap<>();
-
-            SnapDefect sd;
-
-            while ((sd = reader.readSnapDefect()) != null) {
-                
-                
-                if(!isNow(sd)){
-                    reader.backOneLine();
-                    break;
-                }
-                
-                snaps.put(sd.getID(), sd);
-                
-            }
+            HashMap<Integer, Snap> snaps = new HashMap<>();
             
-            if (sd == null) hasNext = false;
-
-            time++;
+            for(
+                    int time = snapDefects.get(index).loc.getTime(); 
+                    index < snapDefects.size() && snapDefects.get(index).getTime() == time; 
+                    index++
+                    )
+                snaps.put(snapDefects.get(index).getID(),snapDefects.get(index));
+            
             return snaps;
 
         }
 
         /**
-         * The time of the next Frame.
+         * The index of the next Frame.
          *
-         * @return The time of the next Frame.
+         * @return The index of the next Frame.
          */
         public int getTime() {
-            return time;
+            return index;
         }
 
     }

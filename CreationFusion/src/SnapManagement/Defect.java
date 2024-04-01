@@ -400,7 +400,7 @@ public abstract class Defect implements hasChargeID {
      *
      * @return The life course of this defect.
      */
-    public List<SnapDefect> getLifeCourse() {
+    public List<? extends SnapDefect> getLifeCourse() {
         return Arrays.asList(lifeCourse);
     }
 

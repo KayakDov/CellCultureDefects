@@ -2,6 +2,9 @@ package SnapManagement;
 
 import GeometricTools.Angle;
 import defectManagement.DefectManager;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Stream;
 import snapDefects.NegSnapDefect;
 import snapDefects.PosSnapDefect;
@@ -143,4 +146,10 @@ public class PosDefect extends Defect {
         return birth?fuseUpTwin:fuseUpSpouse;
     }
 
+    @Override
+    public List<PosSnapDefect> getLifeCourse() {
+        return Arrays.asList((PosSnapDefect[])lifeCourse);
+    }
+
+    
 }

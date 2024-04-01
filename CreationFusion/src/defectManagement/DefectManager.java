@@ -1,38 +1,34 @@
 package defectManagement;
 
+import GeometricTools.Rectangle;
+import ReadWrite.DefaultWriter;
+import ReadWrite.FormatedFileWriter;
 import snapDefects.SpaceTemp;
-import SnapManagement.Defect;
-import SnapManagement.Frame;
-import SnapManagement.PairSnDef;
+import SnapManagement.*;
 import snapDefects.SnapDefect;
 import ReadWrite.ReadManager;
-import SnapManagement.PosDefect;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import snapDefects.NegSnapDefect;
+import snapDefects.PosSnapDefect;
 
 /**
  * Represents a manager for tracking defects.
  */
 public class DefectManager {
 
-    private final List<SnapDefect> snaps;
+    private final List<PosSnapDefect> posSnaps;
+    private final List<NegSnapDefect> negSnaps;
     private final DefectSet posDefects, negDefects;
-    private ReadManager readManager;
     private int timeProx, timeEdge;
     private double distProx, distEdge;
-    private int endTime = -1;
+    private final Rectangle window;
 
     public final static boolean POS = true, NEG = false, BIRTH = true, DEATH = false;
 
@@ -40,6 +36,7 @@ public class DefectManager {
      * Constructs a DefectManager with the specified file name.
      *
      * @param fileFormat The format of the file.
+     * @param window A window, outside of which no defects are tracked.
      * @param distThreshold Two defects must have their creation or annihilation
      * events closer than this threshold to be considered a pair.
      * @param timeThreshold Two defects must have their creation or annihilation
@@ -48,16 +45,20 @@ public class DefectManager {
      * time.
      * @param distEdge The distance an event must be from the edge of the frame.
      */
-    public DefectManager(ReadManager fileFormat, int timeThreshold, double distThreshold, int timeEdge, double distEdge) {
-
-        this.readManager = fileFormat;
+    public DefectManager(ReadManager fileFormat, Rectangle window, int timeThreshold, double distThreshold, int timeEdge, double distEdge) {
 
         setThresholds(timeThreshold, distThreshold, timeEdge, distEdge);
 
-        snaps = new ArrayList<>((int) readManager.lines().parallel().count());
-        readManager.snapDefects().filter(snap -> snap.isTracked()).forEachOrdered(snap -> snaps.add(snap));
+        this.window = window;
+        int numLines = (int) fileFormat.lines().parallel().count();
 
-        var maxID = maxID();
+        List<PosSnapDefect> posTempSnaps = new ArrayList<>(numLines);
+        List<NegSnapDefect> negTempSnaps = new ArrayList<>(numLines);
+
+        Map<Boolean, Integer> maxID = loadSnaps(fileFormat, posTempSnaps, negTempSnaps);
+
+        posSnaps = Collections.unmodifiableList(posTempSnaps);
+        negSnaps = Collections.unmodifiableList(negTempSnaps);
 
         this.posDefects = new PosDefectSet(maxID.get(POS) + 1);
         this.negDefects = new NegDefectSet(maxID.get(NEG) + 1);
@@ -65,8 +66,37 @@ public class DefectManager {
         loadDefects();
 
         pairDefects();
+
+        loadLifeCourses();
     }
 
+    /**
+     * Loads the snap defects into the proffered lists.
+     *
+     * @param fileFormat The file to be read from.
+     * @param posTempSnaps The list to have the positive snap defects read into.
+     * @param negTempSnaps The list to have the negative snap defects read into.
+     * @return The maximum ID in the positive and negative snap defects.
+     */
+    private Map<Boolean, Integer> loadSnaps(ReadManager fileFormat, List<PosSnapDefect> posTempSnaps, List<NegSnapDefect> negTempSnaps) {
+        Map<Boolean, Integer> maxID = new HashMap<>(2);
+        maxID.put(POS, 0);
+        maxID.put(NEG, 0);
+
+        fileFormat.snapDefects()
+                .filter(snap -> window != null && window.contains(snap.loc))
+                .filter(snap -> snap.isTracked())
+                .forEachOrdered(snap -> {
+                    if (snap.getCharge()) {
+                        posTempSnaps.add((PosSnapDefect) snap);
+                        maxID.put(POS, Math.max(maxID.get(POS), snap.getID()));
+                    } else {
+                        negTempSnaps.add((NegSnapDefect) snap);
+                        maxID.put(NEG, Math.max(maxID.get(NEG), snap.getID()));
+                    }
+                });
+        return maxID;
+    }
 
     /**
      * An internal integrity check method. Checks if each defect is stored
@@ -148,7 +178,7 @@ public class DefectManager {
         HashSet<Integer> defects = new HashSet<>(size());
         ArrayList<Integer> orderOfAppearence = new ArrayList<>(defects(charge).size());
 
-        snaps.forEach(sd -> {
+        negSnaps.forEach(sd -> {
             if (sd.isTracked() && !defects.contains(sd.getID())) {
                 defects.add(sd.getID());
                 orderOfAppearence.add(sd.getID());
@@ -183,41 +213,31 @@ public class DefectManager {
     }
 
     /**
+     * Gets a list of snap defects.
+     *
+     * @param charge The charge of the desired list.
+     * @return The list of snap defects with the desired charge.
+     */
+    public List<? extends SnapDefect> getSnapDefects(boolean charge) {
+        return charge ? posSnaps : negSnaps;
+    }
+
+    /**
      * Loads defects from the specified file. Sets their birthday and death
      * days. If birth days and death days have already been set, then this
      * method sets life courses.
      *
      */
     public final void loadDefects() {
-
-        snaps.stream().parallel()
-                .filter(SnapDefect::isTracked)
-                .forEach(sd -> defects(sd.getCharge()).add(sd));
-    }
-
-    /**
-     * Finds the positive and negative defects with the highest IDss in the
-     * file.
-     *
-     * @return The highest posative and negative IDs in teh file. The first
-     * index it the positive and the second index is the negative.
-     */
-    public final Map<Boolean, Integer> maxID() {
-
-        Map<Boolean, Integer> maxID = new HashMap<>(2);
-        maxID.put(true, 0); maxID.put(false, 0);
-
-        readManager.snapDefects().filter(sn -> sn.isTracked()).forEach(sn -> {
-            if (sn.getID() > maxID.get(sn.getCharge()))
-                maxID.put(sn.getCharge(), sn.getID());
-        });
-
-        return maxID;
-
+        IntStream.range(0, 2).mapToObj(i -> i == 0).parallel().forEach(charge
+                -> getSnapDefects(charge).stream().parallel()
+                        .forEach(sd -> defects(sd.getCharge()).add(sd))
+        );
     }
 
     /**
      * Checks if a defects creation/annihilation is near an edge.
+     *
      * @param def A defect whose birth or death will be checked for proximity to
      * the spacial and temporal edges.
      * @param birth A birth can be near the end of time, but not the beginning,
@@ -226,7 +246,7 @@ public class DefectManager {
      */
     public boolean nearEdge(Defect def, boolean birth) {
         SpaceTemp sd = def.get(birth);
-        return readManager.getWindow().nearEdge(sd, distEdge)
+        return window.nearEdge(sd, distEdge)
                 || sd.getTime() < timeEdge
                 || sd.getTime() > getEndTime() - timeEdge;
     }
@@ -246,6 +266,8 @@ public class DefectManager {
         });
     }
 
+    private int endTime = -1;
+
     /**
      * The total amount of time in the file.
      *
@@ -254,7 +276,7 @@ public class DefectManager {
     public long getEndTime() {
         if (endTime == -1)
             if (posDefects.isEmpty())
-                return endTime = snaps.stream().mapToInt(snap-> snap.loc.getTime()).max().getAsInt();
+                return endTime = negSnaps.stream().mapToInt(snap -> snap.loc.getTime()).max().getAsInt();
             else
                 return endTime = all()
                         .mapToInt(def -> def.getDeath().getTime()).max().getAsInt();
@@ -265,11 +287,16 @@ public class DefectManager {
     /**
      * Calculates the percentage of defects that are tracked.
      *
+     * @param rm The file being read.
      * @return The percentage of tracked defects.
      * @throws IOException If an I/O error occurs while reading the file.
      */
-    public double percentTracked() throws IOException {
-        return size() / readManager.lines().count();
+    public double percentTracked(ReadManager rm) throws IOException {
+        double count = 0;
+        ReadManager.Reader reader = rm.getReader();
+        while (reader.readLine() != null) count++;
+        reader.close();
+        return size() / count;
     }
 
     /**
@@ -369,12 +396,14 @@ public class DefectManager {
      * @param timeEdge How far a creation or annihilation event must be from the
      * beginning or end of time.
      * @param distEdge How far an event must be from the edge of the frame.
+     *
      */
     public final void setThresholds(int timeProx, double distProx, int timeEdge, double distEdge) {
         this.timeProx = timeProx;
         this.distProx = distProx;
         this.distEdge = distEdge;
         this.timeEdge = timeEdge;
+
     }
 
     /**
@@ -402,7 +431,7 @@ public class DefectManager {
      * directly from the file, one frame at a time.
      */
     public FrameIterator.ChargedFrameIterator frameIterator(boolean charge) {
-        return new FrameIterator.ChargedFrameIterator(readManager, charge);
+        return new FrameIterator.ChargedFrameIterator(getSnapDefects(charge));
     }
 
     /**
@@ -413,7 +442,7 @@ public class DefectManager {
      * time.
      */
     public FrameIterator frameIterator() {
-        return new FrameIterator(readManager);
+        return new FrameIterator(posSnaps, negSnaps);
     }
 
     /**
@@ -509,7 +538,7 @@ public class DefectManager {
     /**
      * Loads the life courses of each defect.
      */
-    public void loadLifeCourses() {
+    public final void loadLifeCourses() {
 
         all().parallel().forEach(def -> def.prepForTracking());
 
@@ -561,5 +590,16 @@ public class DefectManager {
      */
     public void setFuseUp(int timePeriod) {
         positives().parallel().forEach(def -> def.setFuseUp(timePeriod));
+    }
+
+    /**
+     * Writes all the pairs of this defect manager to the given file.
+     *
+     *
+     * @param ffw A formatted file writer to write.
+     */
+    public void writePairesToFile(FormatedFileWriter ffw) {
+        pairs(DefectManager.BIRTH).forEach(sd -> ffw.writeLine(sd));
+        pairs(DefectManager.DEATH).forEach(sd -> ffw.writeLine(sd));
     }
 }

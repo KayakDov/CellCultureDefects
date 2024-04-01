@@ -18,7 +18,8 @@ import java.util.stream.Collectors;
 public class FormatedFileWriter extends BufferedWriter {
 
     public final char delimiter;
-    public Column[] cols;
+    protected Column[] cols;
+    
 
     /**
      * Creates a file writer that writes the given columns.
@@ -48,7 +49,7 @@ public class FormatedFileWriter extends BufferedWriter {
 
         try {
             write(Arrays.stream(cols)
-                    .map(col -> col.f.apply(sdp))
+                    .map(col -> col.apply(sdp))
                     .collect(Collectors.joining("" + delimiter)));
             newLine();
         } catch (IOException ex) {
@@ -59,71 +60,20 @@ public class FormatedFileWriter extends BufferedWriter {
     /**
      * Each column has a name and a function that writes to it.
      */
-    public static class Column {
+    public abstract static class Column implements Function<PairSnDef, String>{
 
         public final String name;
-        private final Function<PairSnDef, String> f;
-
+        
         /**
          * Constructs a column.
          *
          * @param name The name of the column.
-         * @param f The tool for computing elements of the column
          */
-        public Column(String name, Function<PairSnDef, String> f) {
+        public Column(String name) {
             this.name = name;
-            this.f = f;
-        }
-
-    }
-
-    /**
-     * A default file writer.
-     * @param fileName The name of the file to write to.
-     * @return A default file writer.
-     */
-    public static FormatedFileWriter defaultWriter(String fileName) {
-        try {
-            return new FormatedFileWriter(
-                    fileName,
-                    ',',
-                    new Column("FRAME", sdp -> sdp.pos.loc.getTime() + ""),
-                    new Column("plus_id", sdp -> sdp.pos.getID() + ""),
-                    new Column("xp", sdp -> sdp.pos.loc.getX() + ""),
-                    new Column("yp", sdp -> sdp.pos.loc.getY() + ""),
-                    new Column("angp1", sdp -> sdp.pos.tailAngle().rad() + ""),
-                    new Column("min_id", sdp -> sdp.neg.getID() + ""),
-                    new Column("xm", sdp -> sdp.neg.loc.getX() + ""),
-                    new Column("ym", sdp -> sdp.neg.loc.getY() + ""),
-                    new Column("angm1", sdp -> sdp.neg.tailAngle()[0].rad() + ""),
-                    new Column("angm2", sdp -> sdp.neg.tailAngle()[1].rad() + ""),
-                    new Column("angm3", sdp -> sdp.neg.tailAngle()[2].rad() + ""),
-                    new Column("distance", sdp -> sdp.dist() + ""),
-                    new Column("mp_angle", sdp -> sdp.mpAngle().rad() + ""),
-                    new Column("angp1_rel", sdp -> sdp.anglePRel().rad() + ""),
-                    new Column("angm1_rel", sdp -> sdp.ang123Rel()[0].rad() + ""),
-                    new Column("angm2_rel", sdp -> sdp.ang123Rel()[1].rad() + ""),
-                    new Column("angm3_rel", sdp -> sdp.ang123Rel()[2].rad() + ""),
-                    new Column("fuse_up", sdp -> sdp.fuseUp?"TRUE":"FALSE"),
-                    new Column("p_vel_angle", sdp -> {
-                        Vec vel = sdp.pos.getVelocity();
-                        return (vel!=null? vel.angle().rad():"") + "";
-                    }),
-                    new Column("p_vel_angle_rel", sdp -> {
-                        Vec vel = sdp.relVelocity();
-                        return vel != null?vel.angle().rad() + "":"";}),
-                    new Column("anglep1_rel_vel_angle", sdp -> sdp.anglep1_rel_vel_angle().rad() + ""), 
-                    new Column("fusion", sdp -> !sdp.birth?"TRUE":"FALSE"),
-                    new Column("creation", sdp -> sdp.birth?"TRUE":"FALSE"),
-                    new Column("mp_angl1", sdp -> sdp.mp123()[0].rad() + ""),
-                    new Column("mp_angl2", sdp -> sdp.mp123()[1].rad() + ""),
-                    new Column("mp_angl3", sdp -> sdp.mp123()[2].rad() + ""),
-                    new Column("mp_phase", sdp -> sdp.mpPhase() + "")
-            );
-        } catch (IOException ex) {
-            Logger.getLogger(FormatedFileWriter.class.getName()).log(Level.SEVERE, null, ex);
-            throw new RuntimeException(ex);
         }
     }
+    
+    
 
 }

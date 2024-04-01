@@ -1,92 +1,42 @@
 package ReadWrite;
 
-import GeometricTools.Rectangle;
-import defectManagement.DefectManager;
 import snapDefects.NegSnapDefect;
 import snapDefects.PosSnapDefect;
 import snapDefects.SnapDefect;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Arrays;
+import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
  * @author E. Dov Neimand Specifications for file structure.
  */
 public class ReadManager {
-//  Dfault values no longer needed.
-//    /**
-//     * Useless default indices.
-//     */
-//    public final static int LABEL = 1, ID = 2, QUALITY = 4, POSITION_X = 5,
-//            POSITION_Y = 6, POSITION_Z = 7, FRAME = 9, RADIUS = 10,
-//            VISIBILITY = 11, MANUAL_SPOT_COLOR = 12, MEAN_INTENSITY_CH1 = 13,
-//            MEDIAN_INTENSITY_CH1 = 14, MIN_INTENSITY_CH1 = 15, MAX_INTENSITY_CH1 = 16,
-//            TOTAL_INTENSITY_CH1 = 17, STD_INTENSITY_CH1 = 18, CONTRAST_CH1 = 19,
-//            SNR_CH1 = 20, x_img1 = 23,
-//            y_img1 = 24;
-//
-//    /**
-//     * Useful default indices.
-//     */
-//    public final static int TRACK_ID = 3, POSITION_T = 8, x_img = 21,
-//            y_img = 22, ang1 = 25, ang2 = 26, ang3 = 27, CHARGE = 28;
-//
-//    private final static char DELINEATOR = ',';
 
     /**
      * An instance with the default file specs.
+     *
      * @param fileName The name of the file with default column headers.
-     * @param window The window the snap defects must be in.
+     *
      * @return A File format with default column names.
      */
-    public static ReadManager defaultFileFormat(String fileName, Rectangle window) {
-        return new ReadManager("x_img", "y_img", "TRACK_ID", "POSITION_T", "charge", "ang1", ',', window, fileName);
+    public static ReadManager defaultFileFormat(String fileName) {
+        return new ReadManager("x_img", "y_img", "TRACK_ID", "POSITION_T", "charge", "ang1", ',', fileName);
     }
 
-    public final int x, y, id, time, angle1, charge;
+    public int x, y, id, time, angle1, charge;
     public final char delimiter;
-    private Rectangle window;
-    public String fileName;
 
     /**
-     * Sets the indices of the needed values in the file.
-     *
-     * @param x The index of the x value.
-     * @param y The index of the y value.
-     * @param id The index of the tracking id.
-     * @param time The index of the time.
-     * @param charge The index of the charge.
-     * @param angle1 The index of the first angle. For negative charges, we
-     * assume angle 2 and 3 immediately follow angle 1.
-     * @param delimiter The delimiter that separates values.
-     * @param window The window within the file to be read.
+     *The name of the file.
      */
-    public ReadManager(int x, int y, int id, int time, int charge, int angle1, char delimiter, Rectangle window, String fileName) {
-        this.x = x;
-        this.y = y;
-        this.id = id;
-        this.time = time;
-        this.charge = charge;
-        this.angle1 = angle1;
-        this.delimiter = delimiter;
-        this.window = window;
-        this.fileName = fileName;
-    }
-
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
-    
-    
+    public final String fileName;
 
     /**
      * Finds the index of the key in the array.
@@ -103,36 +53,17 @@ public class ReadManager {
     }
 
     /**
-     * Sets the indices of the needed values in the file.
-     *
-     * @param line A string containing the names of the columns seperated by the
- delimiter.
-     * @param x The name of the x column.
-     * @param y The name of the y column.
-     * @param id The name of the ID column.
-     * @param time The name of the time column.
-     * @param charge The name of the charge column.
-     * @param angle1 The name of the first angle column.
-     * @param delimiter The delimiter that separates values.
-     * @param window The window within the file to be read.
+     * The names of the columns.
      */
-    public ReadManager(String line, String x, String y, String id, String time, String charge, String angle1, char delimiter, Rectangle window, String fileName) {
-        String[] split = line.split("" + delimiter);
-        this.x = indexOf(split, x);
-        this.y = indexOf(split, y);
-        this.id = indexOf(split, id);
-        this.time = indexOf(split, time);
-        this.charge = indexOf(split, charge);
-        this.angle1 = indexOf(split, angle1);
-        this.delimiter = delimiter;
-        this.window = window;
-        this.fileName = fileName;
-    }
+    private final String xHead, yHead, idHead, timeHead, chargeHead, angleHead;
 
-    
-    
     /**
      * Sets the indices of the needed values in the file.
+     *
+     * Note, if multiple files are loaded into this reader, it's important that
+     * they all have the same endTime. Otherwise, the file with early endTimes
+     * will end up with all its defects being marked as fused during its earlier
+     * endTime.
      *
      * @param x The name of the x column.
      * @param y The name of the y column.
@@ -143,29 +74,39 @@ public class ReadManager {
      * @param delimiter The delimiter that separates values.
      * @param fileName The name of a file whose first line has the column names
      * on it.
-     * @param window The window within the file to be read.
      */
-    public ReadManager(String x, String y, String id, String time, String charge, String angle, char delimiter, Rectangle window, String fileName) {
-        
+    public ReadManager(String x, String y, String id, String time, String charge, String angle, char delimiter, String fileName) {
+        this.xHead = x;
+        this.yHead = y;
+        this.idHead = id;
+        this.timeHead = time;
+        this.chargeHead = charge;
+        this.angleHead = angle;
+        this.fileName = fileName;
+        this.delimiter = delimiter;
+        setIndicesFromHeader();
+    }
 
+    /**
+     * Sets the indices to read the file.
+     *
+     * @param fileInd The index of the file to be read.
+     */
+    private final void setIndicesFromHeader() {
         try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
             String[] split = br.readLine().split("" + delimiter);
-            this.x = indexOf(split, x);
-            this.y = indexOf(split, y);
-            this.id = indexOf(split, id);
-            this.time = indexOf(split, time);
-            this.charge = indexOf(split, charge);
-            this.angle1 = indexOf(split, angle);
-            this.delimiter = delimiter;
-            this.window = window;
-            this.fileName = fileName;
+            this.x = indexOf(split, xHead);
+            this.y = indexOf(split, yHead);
+            this.id = indexOf(split, idHead);
+            this.time = indexOf(split, timeHead);
+            this.charge = indexOf(split, chargeHead);
+            this.angle1 = indexOf(split, angleHead);
 
         } catch (Exception ex) {
             Logger.getLogger(ReadManager.class
                     .getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException(ex);
-
-        }        
+        }
     }
 
     /**
@@ -175,46 +116,9 @@ public class ReadManager {
      */
     public Reader getReader() {
         try {
-            return new Reader(fileName);
-
+            return new Reader();
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(ReadManager.class
-                    .getName()).log(Level.SEVERE, null, ex);
-            throw new RuntimeException(ex);
-        }
-    }
-    
-    
-    /**
-     * Gets a file reader for a file with this default format.  The readLine
-     * command will only look at line with the given charge. It will skip
-     * lines in the beginning without that charge and return null for lines
-     * after that without the desired charge.
-     * 
-     *
-     * @param charge The desired charge.
-     * @return A reader for lines with the given charge.
-     */
-    @SuppressWarnings("empty-statement")
-    public Reader getReader(boolean charge) {
-        try {
-            
-            
-            Reader reader = new Reader(fileName){
-                @Override
-                public String readLine() {
-                    String line = super.readLine(); 
-                    return line != null && chargeFrom(line) == charge? line: null;
-                }
-                
-            };
-            while(reader.readLine() == null);
-            reader.backOneLine();
-            return reader;
-            
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(ReadManager.class
-                    .getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ReadManager.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException(ex);
         }
     }
@@ -246,50 +150,38 @@ public class ReadManager {
 
     /**
      * Parses a line from a line of a formated file constructs a SnapDefect from
-     * it. The line needs to be separated by comas and the indices of its
-     * values must match the public final static ints above.
+     * it. The line needs to be separated by comas and the indices of its values
+     * must match the public final static ints above.
      *
      * @param line The formatted line to be parsed.
      * @return The snap defect generated from the line.
      */
     public SnapDefect snapDefect(String line) {
-        if (line == null) return null;
-        String[] split = line.split("" + delimiter);
+        try {
+            if (line == null) return null;
+            String[] split = line.split("" + delimiter);
 
-        double lineX = Double.parseDouble(split[x]);
-        double lineY = Double.parseDouble(split[y]);
-        int lineT = (int) Double.parseDouble(split[time]);
-        int lineID = "".equals(split[id])
-                ? SnapDefect.NO_ID
-                : (int) Double.parseDouble(split[id]);
-        boolean lineCharge = Double.parseDouble(split[charge]) > 0;
-        double lineAng1 = Double.parseDouble(split[angle1]);
-        if (lineCharge)
-            return new PosSnapDefect(lineX, lineY, lineT, lineID, lineAng1);
+            double lineX = Double.parseDouble(split[x]);
+            double lineY = Double.parseDouble(split[y]);
+            int lineT = (int) Double.parseDouble(split[time]);
+            int lineID = "".equals(split[id])
+                    ? SnapDefect.NO_ID
+                    : (int) Double.parseDouble(split[id]);
+            boolean lineCharge = Double.parseDouble(split[charge]) > 0;
+            double lineAng1 = Double.parseDouble(split[angle1]);
+            if (lineCharge)
+                return new PosSnapDefect(lineX, lineY, lineT, lineID, lineAng1);
 
-        double lineAng2 = Double.parseDouble(split[angle1 + 1]);
-        double lineAng3 = Double.parseDouble(split[angle1 + 2]);
-        return new NegSnapDefect(lineX, lineY, lineT, lineID, lineAng1, lineAng2, lineAng3);
-    }
+            double lineAng2 = Double.parseDouble(split[angle1 + 1]);
+            double lineAng3 = Double.parseDouble(split[angle1 + 2]);
 
-    /**
-     * Resets the window.
-     *
-     * @param window
-     * @return This file format.
-     */
-    public ReadManager setWindow(Rectangle window) {
-        this.window = window;
-        return this;
-    }
+            return new NegSnapDefect(lineX, lineY, lineT, lineID, lineAng1, lineAng2, lineAng3);
 
-    /**
-     * Is the SnapDefect described on the line in the window?
-     * @param line The line whose SnapDefect is to be checked for membership in the window.
-     * @return True if the SnapDefect on the line is in the window, false otherwise.
-     */
-    public boolean inWindow(String line) {
-        return window.contains(doubleAt(line, this.x), doubleAt(line, this.y));
+        } catch (NumberFormatException nfe) {
+            throw new NumberFormatException(nfe.getMessage()
+                    + "\n Original line is: " + line);
+        }
+
     }
 
     /**
@@ -303,17 +195,6 @@ public class ReadManager {
         return !line.substring(first, charCount(line, first, 1) - 1)
                 .equals("");
     }
-
-    /**
-     * The window of interest. Data outside this window should not be
-     * considered.
-     *
-     * @return The window of interest.
-     */
-    public Rectangle getWindow() {
-        return window;
-    }
-    
 
     /**
      * The index immediately after the nth comma in the string after start.
@@ -344,7 +225,7 @@ public class ReadManager {
     private double doubleAt(String str, int index) {
         int startTerm = charCount(str, 0, index);
         String subStr = str.substring(startTerm, charCount(str, startTerm, 1) - 1);
-        if(subStr.isEmpty()) return Double.NaN;
+        if (subStr.isEmpty()) return Double.NaN;
         return Double.parseDouble(subStr);
     }
 
@@ -358,146 +239,55 @@ public class ReadManager {
         return (int) doubleAt(string, time);
 
     }
-    
-    
+
     /**
-     * All the lines of the file.
+     * A stream of all the snap defects.
      *
-     * @return All the lines of the file.
+     * @return A stream of all the snap defects.
      */
     public Stream<String> lines() {
         try {
-            return Files.lines(Paths.get(fileName)).skip(1).filter(line -> inWindow(line));
+            return Files.lines(new File(fileName).toPath()).skip(1);
         } catch (IOException ex) {
-            Logger.getLogger(DefectManager.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ReadManager.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException(ex);
         }
     }
-        
+
     /**
      * All the snap defects in the file.
+     *
      * @return All the snap defects in the file.
      */
-    public Stream<SnapDefect> snapDefects(){
-        return lines().parallel().map(line -> snapDefect(line));
-    }
-    
-    /**
-     * A stream of the elements of a column of the file.
-     * @param index The index of the desired column.  The indices of important
-     * columns are saved in this object.
-     * @return The values of a column.
-     */
-    public DoubleStream column(int index){
-        return lines().mapToDouble(line -> doubleAt(line, index));
-    }
-    
-    /**
-     * All the times.
-     * @return All the times.
-     */
-    public IntStream timeColumn(){
-        return column(time).mapToInt(d -> (int)d);
+    public Stream<SnapDefect> snapDefects() {
+        return lines().map(line -> snapDefect(line));
     }
 
     /**
-     * A buffered reader for the file.  This reader will skip lines outside the
+     * A buffered reader for the file. This reader will skip lines outside the
      * window, and can go back one line, but never further.
      */
-    public class Reader extends BufferedReader {
+    public class Reader extends BufferedReader{
 
-        private boolean backUp = false;
-
-        /**
-         *
-         * @param fileName The name of the file to be read.
-         * @throws FileNotFoundException
-         */
-        public Reader(String fileName) throws FileNotFoundException {
+        
+        public Reader() throws FileNotFoundException {
             super(new FileReader(fileName));
             try {
-                super.readLine();
+                readLine();
             } catch (IOException ex) {
                 Logger.getLogger(ReadManager.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
-        private String lastLine;
 
-        @Override
-        public String readLine() {
-            if (backUp) {
-                backUp = false;
-                return lastLine;
-            }
+        /**
+         * reads the next snap defect
+         *
+         * @return The next snap Defect.
+         */
+        public SnapDefect readSnap() {
             try {
-                String tempLine = super.readLine();
-                while (tempLine != null && !inWindow(tempLine))
-                    tempLine = super.readLine();
-                return lastLine = tempLine;
-            } catch (IOException ex) {
-                Logger.getLogger(Reader.class.getName()).log(Level.SEVERE, null, ex);
-                throw new RuntimeException(ex);
-            }
-        }
-
-        /**
-         * The snap defect from the line.
-         *
-         * @return The snap defect from the line.
-         */
-        public SnapDefect readSnapDefect() {
-            String line = readLine();
-            if (line == null) return null;
-            return snapDefect(readLine());
-        }
-
-        /**
-         * The charge from the line.
-         *
-         * @return The charge from the line.
-         */
-        public boolean readCharge() {
-            return chargeFrom(readLine());
-        }
-
-        /**
-         * Is the next line tracked.
-         *
-         * @return True if the next line is tracked, false otherwise.
-         */
-        public boolean isTracked() {
-            return ReadManager.this.isTracked(readLine());
-        }
-
-        /**
-         * Backs the reader up one line.
-         */
-        public void backOneLine() {
-            if (backUp) throw new RuntimeException(
-                        "This reader is already backed up.  "
-                        + "A reader can not backup more than once.");
-        }
-
-        /**
-         * Jumps the reader forward to the first line of the given charge.
-         *
-         * @param charge The desired charge.
-         * @return This reader.
-         */
-        @SuppressWarnings("empty-statement")
-        public Reader jumpToCharge(boolean charge) {
-            String line;
-            while ((line = readLine()) != null && chargeFrom(line) != charge);
-            backOneLine();
-            return this;
-        }
-
-        @Override
-        public boolean ready() {
-
-            try {
-                return !backUp && super.ready();
+                return snapDefect(readLine());
             } catch (IOException ex) {
                 Logger.getLogger(ReadManager.class.getName()).log(Level.SEVERE, null, ex);
                 throw new RuntimeException(ex);

@@ -80,7 +80,7 @@ public class PairSnDef {
      */
     public Angle mpAngle() {
         if (!workingPair()) return Angle.NaN;
-        return new Angle(pos.loc.minus(neg.loc));
+        return new Angle(neg.loc.minus(pos.loc));
     }
 
     /**
@@ -154,7 +154,7 @@ public class PairSnDef {
      */
     public Angle anglep1_rel_vel_angle() {
         if (pos.getVelocity() == null) return Angle.NaN;
-        return new Angle(anglePRel().rad() - new Angle(pos.getVelocity()).rad());
+        return anglePRel().minus(pos.getVelocity().angle());
     }
 
 }
