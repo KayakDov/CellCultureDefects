@@ -1,8 +1,10 @@
 package main;
 
+import Charts.LineChart;
 import GeometricTools.Angle;
 import snapDefects.SpaceTemp;
 import GeometricTools.Rectangle;
+import GeometricTools.Vec;
 import ReadWrite.DefaultWriter;
 import ReadWrite.ReadManager;
 import ReadWrite.FormatedFileWriter;
@@ -13,8 +15,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import org.jfree.data.xy.DefaultXYDataset;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.YIntervalSeries;
 import snapDefects.SnapDefect;
 
 /**
@@ -93,6 +100,24 @@ public class Main {
     }
 
     /**
+     * Working on the bacteria file.
+     */
+    public static void bacteriaWork() {
+        DefectManager dm = new DefectManager(
+                ReadManager.defaultFileFormat("PlusAndMinusTM6.csv"),
+                new Rectangle(900, 0, 900, 900),
+                2, 10, 4, 20);
+
+        
+        List<Vec> pairs = dm.pairedPos(DefectManager.DEATH)
+                .flatMap(pos -> pos.defectPairs(DefectManager.DEATH).map(pair -> new Vec(pair.pos.getTime() - pos.getBirth().getTime(), pair.dist())))
+                .collect(Collectors.toList());
+        
+        LineChart.factory("", "distance", "mpPhase", pairs);
+        
+    }
+
+    /**
      * parses the arguments
      *
      * @param args The user arguments.
@@ -108,21 +133,35 @@ public class Main {
         args[5] = "900";
         args[6] = "900";
         args[7] = "threshold";
-        args[8] = "35";//small number for bacteria, larger number for cells
+        args[8] = "8";//small number for bacteria, larger number for cells
         args[9] = "2";
-        args[10] = "50";
+        args[10] = "20";
         args[11] = "5";
 
-        ReadManager ff = ReadManager.defaultFileFormat(args[0]);
+        File from = new File(args[0]);
 
-        new DefectManager(
-                ff,
-                getWindow(args),
-                timeThreshold(args),
-                distThreshold(args),
-                timeEdge(args),
-                distEdge(args)
-        ).writePairesToFile(new DefaultWriter(args[1]));
+        String[] files;
+
+        if (from.isDirectory()) {
+            String parent = from.toString();
+            files = Arrays.stream(new File(parent).list()).map(str -> parent + "//" + str).toArray(String[]::new);
+        } else files = new String[]{args[0]};
+
+        DefaultWriter writer = new DefaultWriter(args[1]);
+
+        for (String fileName : files) {
+            DefectManager dm = new DefectManager(
+                    ReadManager.defaultFileFormat(fileName),
+                    getWindow(args),
+                    timeThreshold(args),
+                    distThreshold(args),
+                    timeEdge(args),
+                    distEdge(args)
+            );
+            writer.setIdBegin(fileName.replaceAll("[^0-9]", "") + ".");//Sets the ID prefix to be the numbers in the file name.
+            dm.writePairesToFile(writer);
+        }
+
     }
 
     /**
@@ -138,7 +177,7 @@ public class Main {
 
         for (String fileName : files) {
             DefectManager dm = new DefectManager(
-                    ReadManager.defaultFileFormat(fileName), 
+                    ReadManager.defaultFileFormat(fileName),
                     new Rectangle(0, 0, 2050, 2050), 2, 40, 6, 80
             );
             writer.setIdBegin(fileName.replaceAll("[^0-9]", "") + ".");
@@ -153,7 +192,8 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
 
-        cellExperiments();
+        bacteriaWork();
+//        cellExperiments();
 //        parseArgs(args);
     }
 

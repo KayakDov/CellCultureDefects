@@ -84,7 +84,7 @@ public class DefectManager {
         maxID.put(NEG, 0);
 
         fileFormat.snapDefects()
-                .filter(snap -> window != null && window.contains(snap.loc))
+                .filter(snap -> (window != null && window.contains(snap.loc)) || window == null)
                 .filter(snap -> snap.isTracked())
                 .forEachOrdered(snap -> {
                     if (snap.getCharge()) {

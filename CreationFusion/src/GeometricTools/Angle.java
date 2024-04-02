@@ -1,6 +1,6 @@
 package GeometricTools;
 
-import dataTools.stdDev;
+import dataTools.StdDev;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -111,7 +111,7 @@ public class Angle {
     public static double stdDev(Supplier<Stream<Angle>> angleStream){
         Angle avg = average(angleStream.get());
         return angleStream.get()
-                .mapToDouble(angle -> stdDev.sq(angle.arcDist(avg))).sum()/
+                .mapToDouble(angle -> StdDev.sq(angle.arcDist(avg))).sum()/
                 angleStream.get().count();
     }
     
