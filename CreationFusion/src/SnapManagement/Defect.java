@@ -319,7 +319,7 @@ public abstract class Defect implements hasChargeID {
                 start = Math.max(lifeCourse.length - maxNumPairs, 0);
                  end = lifeCourse.length;
             }
-            if(peakDistStop){
+            if(peakDistStop && spouseIsTwin()){
                 int mid = maxDistIndex(birth);
                 if(birth) end = Math.min(end, mid);
                 else start = Math.max(start, mid);
@@ -467,5 +467,14 @@ public abstract class Defect implements hasChargeID {
                 ) index = workingPairAfter(index + 1);
         return index;
     }
-
+    
+    /**
+     * The time from the given event.
+     * @param frameNumber The number of the frame.
+     * @param birth True if the event is birth, false otherwise.
+     * @return The number of frames from the frame number to the event.
+     */
+    protected int timeFromEvent(int frameNumber, boolean birth){
+        return birth?frameNumber - getBirth().getTime(): getDeath().getTime() - frameNumber;
+    }
 }

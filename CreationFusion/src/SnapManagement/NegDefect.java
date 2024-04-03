@@ -94,6 +94,7 @@ public class NegDefect extends Defect {
                 getPair(birth).snapFromEvent(timeFromEvent, birth),
                 snapFromEvent(timeFromEvent, birth),
                 getPair(birth).isFuseUp(birth),
+                timeFromEvent,
                 birth);
 
     }
@@ -106,6 +107,12 @@ public class NegDefect extends Defect {
                 ? getPair(birth).snapFromFrame(time)
                 : null;
 
-        return new PairSnDef(partnerSnap, snapFromFrame(time), getPair(birth).isFuseUp(birth), birth);
+        return new PairSnDef(
+                partnerSnap, 
+                snapFromFrame(time), 
+                getPair(birth).isFuseUp(birth), 
+                timeFromEvent(time, birth),
+                birth
+        );
     }
 }

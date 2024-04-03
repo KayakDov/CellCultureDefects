@@ -109,11 +109,14 @@ public class Main {
                 2, 10, 4, 20);
 
         
-        List<Vec> pairs = dm.pairedPos(DefectManager.DEATH)
-                .flatMap(pos -> pos.defectPairs(DefectManager.DEATH).map(pair -> new Vec(pair.pos.getTime() - pos.getBirth().getTime(), pair.dist())))
+        List<Vec> pairs1 = dm.pairedPos(DefectManager.DEATH)
+                .flatMap(pos -> pos.defectPairs(DefectManager.DEATH, 60, false).map(pair -> new Vec(pos.getDeath().getTime() - pair.pos.getTime(), pair.dist())))
+                .collect(Collectors.toList());
+        List<Vec> pairs2 = dm.pairedPos(DefectManager.DEATH)
+                .flatMap(pos -> pos.defectPairs(DefectManager.DEATH, 60, true).map(pair -> new Vec(pair.timeFromEvent, pair.dist())))
                 .collect(Collectors.toList());
         
-        LineChart.factory("", "distance", "mpPhase", pairs);
+        LineChart.factory("Bacteria", "time from fusion", "distance between pairs", pairs1, pairs2);
         
     }
 

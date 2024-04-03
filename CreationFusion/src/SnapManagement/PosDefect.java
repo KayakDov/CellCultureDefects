@@ -3,9 +3,7 @@ package SnapManagement;
 import GeometricTools.Angle;
 import defectManagement.DefectManager;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 import snapDefects.NegSnapDefect;
 import snapDefects.PosSnapDefect;
 import snapDefects.SnapDefect;
@@ -97,7 +95,7 @@ public class PosDefect extends Defect {
         NegSnapDefect snapPair = hasPair(birth)?
                 getPair(birth).snapFromEvent(timeFromEvent, birth): null;
         
-        return new PairSnDef(snap, snapPair, isFuseUp(birth), birth);
+        return new PairSnDef(snap, snapPair, isFuseUp(birth), timeFromEvent, birth);
     }
 
     @Override
@@ -107,7 +105,13 @@ public class PosDefect extends Defect {
                 ? getPair(birth).snapFromFrame(time)
                 : null;
 
-        return new PairSnDef(snapFromFrame(time), partnerSnap, isFuseUp(birth), birth);
+        return new PairSnDef(
+                snapFromFrame(time), 
+                partnerSnap, 
+                isFuseUp(birth), 
+                timeFromEvent(time, birth), 
+                birth
+        );
     }
     
     

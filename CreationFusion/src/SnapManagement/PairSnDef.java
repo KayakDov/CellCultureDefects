@@ -13,6 +13,11 @@ import java.util.function.Function;
  */
 public class PairSnDef {
 
+    
+    /**
+     * The amount of time from the event, birth or death 
+     */
+    public final int timeFromEvent;
     /**
      * The positive defect in the pair.
      */
@@ -49,13 +54,15 @@ public class PairSnDef {
      * @param neg A defect with opposite charge of a.
      * @param fuseUp True if the positive snap defect points clockwise around
      * the negative snap defect on average.
+     * @param timeFromEvent The amount of time from the birth or death event.
      * @param birth True if they are twins, false if they are fusion partners.
      */
-    public PairSnDef(PosSnapDefect pos, NegSnapDefect neg, boolean fuseUp, boolean birth) {
+    public PairSnDef(PosSnapDefect pos, NegSnapDefect neg, boolean fuseUp, int timeFromEvent, boolean birth) {
         this.pos = pos;
         this.neg = neg;
         this.birth = birth;
         this.fuseUp = fuseUp;
+        this.timeFromEvent = timeFromEvent;
     }
 
     /**
