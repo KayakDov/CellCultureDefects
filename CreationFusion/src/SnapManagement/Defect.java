@@ -62,8 +62,8 @@ public abstract class Defect implements hasChargeID {
      * @param birth true to set the twin, false to set the spouse.
      */
     protected void setPair(Defect pair, boolean birth) {
-        setPairHard(pair, birth);
         if (pair != null) pair.setPairHard(this, birth);
+        setPairHard(pair, birth);
     }
 
     /**
@@ -381,18 +381,6 @@ public abstract class Defect implements hasChargeID {
      */
     public double displacement(int timeFromBirth) {
         return birth.dist(snapFromEvent(timeFromBirth, DefectManager.BIRTH).loc);
-    }
-
-    /**
-     * Sets the pair for the lonely defect.
-     *
-     * @param birth Does lonely need a twin or a spouse.
-     * @param possibles All the possible defects that might be good pairs.
-     * @param dm The defect manager that can find a pair for this defect.
-     */
-    public void setPair(boolean birth, Set<Defect> possibles, DefectManager dm) {
-        if (!dm.nearEdge(this, birth))
-            setPair(dm.getPair(this, possibles, birth), birth);
     }
 
     /**

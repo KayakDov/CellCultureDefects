@@ -1,28 +1,15 @@
 package main;
 
-import Charts.LineChart;
-import GeometricTools.Angle;
+import Charts.HeatMap;
+import Charts.NamedData;
 import snapDefects.SpaceTemp;
 import GeometricTools.Rectangle;
-import GeometricTools.Vec;
 import ReadWrite.DefaultWriter;
 import ReadWrite.ReadManager;
-import ReadWrite.FormatedFileWriter;
 import defectManagement.DefectManager;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import org.jfree.data.xy.DefaultXYDataset;
-import org.jfree.data.xy.XYDataset;
-import org.jfree.data.xy.YIntervalSeries;
-import snapDefects.SnapDefect;
 
 /**
  *
@@ -106,17 +93,18 @@ public class Main {
         DefectManager dm = new DefectManager(
                 ReadManager.defaultFileFormat("PlusAndMinusTM6.csv"),
                 new Rectangle(900, 0, 900, 900),
-                2, 10, 4, 20);
+                2, 20, 4, 20);
 
         
-        List<Vec> pairs1 = dm.pairedPos(DefectManager.DEATH)
-                .flatMap(pos -> pos.defectPairs(DefectManager.DEATH, 60, false).map(pair -> new Vec(pos.getDeath().getTime() - pair.pos.getTime(), pair.dist())))
-                .collect(Collectors.toList());
-        List<Vec> pairs2 = dm.pairedPos(DefectManager.DEATH)
-                .flatMap(pos -> pos.defectPairs(DefectManager.DEATH, 60, true).map(pair -> new Vec(pair.timeFromEvent, pair.dist())))
-                .collect(Collectors.toList());
+        NamedData mpPhaseOfMpAngle = dm.getNamedData(
+                p -> p.mpAngle().deg(), 
+                p -> p.mpPhase(), 
+                DefectManager.DEATH, 
+                "", 
+                15
+        );
         
-        LineChart.factory("Bacteria", "time from fusion", "distance between pairs", pairs1, pairs2);
+        HeatMap.factory("Bacteria", "mpAngle", "mpPhase", mpPhaseOfMpAngle.data, 1000, 200, 2*Math.PI, 2*Math.PI/3);
         
     }
 

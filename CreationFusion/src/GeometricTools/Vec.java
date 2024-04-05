@@ -81,9 +81,20 @@ public class Vec {
      * @param loc The other location.
      * @return The distance between this location and the specified location.
      */
-    public double dist(Vec loc) {
-        double dx = loc.x - x;
-        double dy = loc.y - y;
+    public double dist(Vec loc){
+        return dist(loc, Double.NaN, Double.NaN);
+    }
+    
+    /**
+     * Calculates the distance between this location and another location.
+     * @param loc The other location.
+     * @param yMod The modularity of the y axis.
+     * @param xMod The modularity of the x axis.
+     * @return The distance between this location and the specified location.
+     */
+    public double dist(Vec loc, double yMod, double xMod) {
+        double dx = Angle.modDif(x, loc.x, xMod);
+        double dy = Angle.modDif(y, loc.y, yMod);
         return Math.sqrt(dx * dx + dy * dy);
     }
 

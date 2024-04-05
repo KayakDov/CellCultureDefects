@@ -142,9 +142,9 @@ public class LineChart extends ApplicationFrame {
      * @param yAxis The name of the y axis.
      * @param data The data.
      */
-    public static void factory(String title, String xAxis, String yAxis, List<Vec>... data){
+    public static void factory(String title, String xAxis, String yAxis, NamedData... data){
         YIntervalSeries[] series = new YIntervalSeries[data.length];
-        Arrays.setAll(series, i -> new YIntervalSeries(i));
+        Arrays.setAll(series, i -> new YIntervalSeries(data[i].name));
         
         for(int i = 0; i < data.length; i++){
             HashMap<Double, List<Double>> map = new HashMap<>(data[i].size());

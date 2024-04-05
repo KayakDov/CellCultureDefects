@@ -1,17 +1,17 @@
 package defectManagement;
 
+import Charts.NamedData;
 import GeometricTools.Rectangle;
-import ReadWrite.DefaultWriter;
+import GeometricTools.Vec;
 import ReadWrite.FormatedFileWriter;
 import snapDefects.SpaceTemp;
 import SnapManagement.*;
 import snapDefects.SnapDefect;
 import ReadWrite.ReadManager;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -65,7 +65,7 @@ public class DefectManager {
 
         loadDefects();
 
-        pairDefects();
+        Stream.of(BIRTH, DEATH).forEach(event -> pairDefects(event));//TODO This can be parallel.
 
         loadLifeCourses();
     }
@@ -229,7 +229,7 @@ public class DefectManager {
      *
      */
     public final void loadDefects() {
-        IntStream.range(0, 2).mapToObj(i -> i == 0).parallel().forEach(charge
+        Stream.of(BIRTH, DEATH).parallel().forEach(charge
                 -> getSnapDefects(charge).stream().parallel()
                         .forEach(sd -> defects(sd.getCharge()).add(sd))
         );
@@ -253,17 +253,19 @@ public class DefectManager {
 
     /**
      * Pairs defects based on proximity and time thresholds.
+     * @param birth Set true to pair births and false to pair annihilations.
      */
-    public final void pairDefects() {
-        clearPairing();
+    public final void pairDefects(final boolean birth) {
+        clearPairing(birth);
 
-        Set<Defect> possibleBirths = new HashSet<>(negDefects);
-        Set<Defect> possibleDeaths = new HashSet<>(negDefects);
+        Set<NegDefect> possiblePairs = new HashSet<>(negDefects);
 
-        positives().forEach(lonely -> {
-            lonely.setPair(BIRTH, possibleBirths, this);
-            lonely.setPair(DEATH, possibleDeaths, this);
-        });
+        positives().forEach(lonely -> 
+            lonely.setPair(
+                    getPair(lonely, possiblePairs, birth), 
+                    birth
+            )
+        );
     }
 
     private int endTime = -1;
@@ -375,8 +377,8 @@ public class DefectManager {
      * @param birth True if a twin is sought, false for a spouse.
      * @return The nearest pair if one exists within the given proximity.
      */
-    public Defect getPair(Defect lonely, Set<Defect> eligibles, boolean birth) {
-        Defect closest = eligibles.stream()
+    public NegDefect getPair(PosDefect lonely, Set<NegDefect> eligibles, final boolean birth) {
+        NegDefect closest = eligibles.stream()
                 .parallel()
                 .filter(elig -> !nearEdge(elig, birth))
                 .filter(eligable -> eligable.get(birth).near(lonely.get(birth), distProx, timeProx))
@@ -385,6 +387,8 @@ public class DefectManager {
 
         if (closest != null) eligibles.remove(closest);
 
+        
+        
         return closest;
     }
 
@@ -417,8 +421,8 @@ public class DefectManager {
     /**
      * Removes all spouses and twins.
      */
-    private void clearPairing() {
-        positives().parallel().forEach(defect -> defect.clearPairs());
+    private void clearPairing(boolean birth) {
+        pairedPos(birth).parallel().forEach(defect -> defect.setPair(null, birth));
     }
 
     /**
@@ -601,5 +605,24 @@ public class DefectManager {
     public void writePairesToFile(FormatedFileWriter ffw) {
         pairs(DefectManager.BIRTH).forEach(sd -> ffw.writeLine(sd));
         pairs(DefectManager.DEATH).forEach(sd -> ffw.writeLine(sd));
+    }
+    
+    /**
+     * Uses all the pairs to provide a set of data points.
+     * @param x The x value of each data point.
+     * @param y The y value of each data point.
+     * @param birth True for creation pairs, false for annihilation pairs.
+     * @param name The name of the data set.
+     * @param numPairs The number of SnapDefectPairs created from each positive defect.
+     * This is roughly the number of frames desired.
+     * @return Data points generated from all the pairs.
+     */
+    public NamedData getNamedData(Function<PairSnDef, Double> x, Function<PairSnDef, Double> y, boolean birth, String name, int numPairs){
+        return new NamedData( 
+                defectStream(POS)
+                        .filter(def -> def.hasPair(birth))
+                        .flatMap(def -> def.defectPairs(birth, numPairs, false))
+                        .map(pair -> new Vec(x.apply(pair), y.apply(pair)))
+                        .collect(Collectors.toList()), name);
     }
 }

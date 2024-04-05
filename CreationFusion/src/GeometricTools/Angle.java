@@ -88,18 +88,28 @@ public class Angle {
     }
     
     /**
+     * The distance from a to b modular arithmetic. a and b should be between 0
+     * and mod.
+     * @param a The distance from a to b modular arithmetic.
+     * @param b The distance from a to b modular arithmetic.
+     * @param mod size of the circle.
+     * @return The difference between the two points.
+     */
+    public static double modDif(double a, double b, double mod){
+        if(!Double.isFinite(mod)) return Math.abs(a - b);
+        double direct = Math.abs(a - b);
+        double outside = (mod - Math.max(a, b)) + Math.min(a, b);
+        return Math.min(direct, outside);
+    }
+    
+    /**
      * The arc distance between this angle and another. 
      * This will always be a positive number.
      * @param ang The other angle.
      * @return The arc distance between the two angles.
      */
     public double arcDist(Angle ang){
-        double regAround = Math.abs(rad() - ang.rad());
-        double otherAround =
-                2*Math.PI - Math.max(rad(), ang.rad()) 
-                + Math.min(rad(), ang.rad());
-        
-        return Math.min(regAround, otherAround);
+        return modDif(rad(), ang.rad(), 2* Math.PI);
     }
     
     /**

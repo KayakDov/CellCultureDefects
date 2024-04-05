@@ -5,7 +5,7 @@ package GeometricTools;
  * @author E. Dov Neimand
  */
 public class Rectangle {
-    private double x, y, width, height;
+    public final double x, y, width, height;
 
     /**
      * The dimensions of the rectangle.
