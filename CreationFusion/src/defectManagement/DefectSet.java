@@ -3,7 +3,7 @@ package defectManagement;
 import SnapManagement.Defect;
 import SnapManagement.NegDefect;
 import SnapManagement.PosDefect;
-import snapDefects.PosSnapDefect;
+import java.lang.reflect.Array;
 import snapDefects.SnapDefect;
 import java.util.Arrays;
 import java.util.Collection;
@@ -12,6 +12,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 import snapDefects.NegSnapDefect;
+import snapDefects.PosSnapDefect;
 
 /**
  * A set for defects. Adding unique SnapDefects can be done concurrently. That
@@ -24,24 +25,81 @@ import snapDefects.NegSnapDefect;
 public abstract class DefectSet<T extends Defect> implements Collection<T> {
 
     private int size = 0;
-    private final Lock[] locks;
+    private Lock[] locks;
+    protected T[] defects;
 
+    /**
+     * For copy construction.
+     * @param ds to copy
+     */
+    protected DefectSet(DefectSet<T> ds) {
+        this.locks = ds.locks;
+        this.defects = ds.defects;
+        this.size = ds.size;
+    }
+
+
+    
+    /**
+     * merges in another Defect set of the same type.
+     * @param other The DefectSet to be merged in.
+     */
+    public void mergeIn(DefectSet<T> other){
+        T[] contracted = contract();
+        T[] otherContracted = other.contract();
+        
+        defects = Arrays.copyOf(contracted, contracted.length + otherContracted.length);
+        System.arraycopy(otherContracted, 0, defects, contracted.length, otherContracted.length);
+        
+        for(int i = contracted.length; i < defects.length; i++)
+            defects[i].setID(i);
+        
+        locks = new Lock[defects.length];
+        Arrays.fill(locks, new ReentrantLock(false));
+        size += other.size();
+    }
+    
+    
+    
+    /**
+     * Removes all the empty spaces from the array and resets IDs according to
+     * their new place in the array.
+     */
+    public T[] contract(){
+        int offset = 0;
+        
+        for(int i = 0; i + offset < defects.length; i++){
+            while(i + offset < defects.length && defects[i + offset] == null)
+                offset++;
+            if(i + offset < defects.length){
+                defects[i] = defects[i + offset];
+                defects[i].setID(i);
+            }
+        }
+        
+        return defects = Arrays.copyOf(defects, defects.length - offset);
+    }
     /**
      * Sets an element of the underlying array.
      *
      * @param i The index of the element to be set.
      * @param defect The defect to be placed at the index.
      */
-    protected abstract void set(int i, T defect);
+    protected void set(int i, T defect){
+        defects[i] = defect;
+    }
 
     /**
      * returns the defect at the given id.
      *
-     * @param id An ID.
+     * @param i An ID.
      * @return The defect with the given ID.
      */
-    protected abstract T get(int i);
+    protected T get(int i){
+        return (T)defects[i];
+    }
 
+    
     /**
      * The charge of the elements in this collection.
      *
@@ -54,7 +112,9 @@ public abstract class DefectSet<T extends Defect> implements Collection<T> {
      *
      * @return The length of the underlying array,
      */
-    protected abstract Defect[] array();
+    protected T[] array(){
+        return (T[])defects;
+    }
 
     /**
      * Constructor.
@@ -63,7 +123,7 @@ public abstract class DefectSet<T extends Defect> implements Collection<T> {
      */
     public DefectSet(int maxSize) {
         locks = new ReentrantLock[maxSize];
-        Arrays.setAll(locks, i -> new ReentrantLock(false));
+        Arrays.setAll(locks, i -> new ReentrantLock(false));        
     }
 
     @Override
@@ -280,20 +340,41 @@ public abstract class DefectSet<T extends Defect> implements Collection<T> {
         return Arrays.stream(array()).filter(def -> def != null) .map(def ->(T)def);
     }
 
-    /**
-     * Some tests for this class.
-     *
-     * @param args
-     */
-    public static void main(String[] args) {
-        DefectSet ds = new PosDefectSet(4);
-
-        ds.add(new PosSnapDefect(0, 0, 3, 2, .5));
-        ds.add(new PosSnapDefect(0, 0, 2, 3, .5));
-
-        Iterator<Defect> iter = ds.iterator();
-
-        while (iter.hasNext()) System.out.println(iter.next().getID());
+    @Override
+    public String toString() {
+        return Arrays.toString(defects);
     }
+    
+    
+    
+    
+    public static void main(String[] args) {
+        // Create two DefectSet instances to merge
+        DefectSet<PosDefect> posDefectSet1 = new PosDefectSet(5);
+        DefectSet<PosDefect> posDefectSet2 = new PosDefectSet(5);
+
+        // Populate the first PosDefectSet
+        posDefectSet1.add(new PosSnapDefect(1.0, 1.0, 0, 1, 45.0));
+        posDefectSet1.add(new PosSnapDefect(2.0, 2.0, 1, 2, 30.0));
+
+        // Populate the second NegDefectSet
+        posDefectSet2.add(new PosSnapDefect(3.0, 3.0, 0, 1, -45.0));
+        posDefectSet2.add(new PosSnapDefect(4.0, 4.0, 1, 2, -30.0));
+
+        // Display the contents of both DefectSets before merging
+        System.out.println("PosDefectSet 1 before merge:");
+        System.out.println(posDefectSet1);
+        System.out.println("NegDefectSet 2 before merge:");
+        System.out.println(posDefectSet2);
+
+        // Merge negDefectSet2 into posDefectSet1
+        posDefectSet1.mergeIn(posDefectSet2);
+
+        // Display the contents of posDefectSet1 after merging
+        System.out.println("PosDefectSet 1 after merge:");
+        System.out.println(posDefectSet1);
+    }
+
+
 
 }

@@ -97,8 +97,8 @@ public class Angle {
      */
     public static double modDif(double a, double b, double mod){
         if(!Double.isFinite(mod)) return Math.abs(a - b);
-        double direct = Math.abs(a - b);
-        double outside = (mod - Math.max(a, b)) + Math.min(a, b);
+        double direct = Math.abs(a - b),
+            outside = (mod - Math.max(a, b)) + Math.min(a, b);
         return Math.min(direct, outside);
     }
     

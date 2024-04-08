@@ -309,19 +309,19 @@ public class DefaultWriter extends FormatedFileWriter {
         new Column("mp_angl1") {
             @Override
             public String apply(PairSnDef sdp) {
-                return sdp.mp123()[0].rad() + "";
+                return sdp.tailAnlgesRel()[0].rad() + "";
             }
         },
         new Column("mp_angl2") {
             @Override
             public String apply(PairSnDef sdp) {
-                return sdp.mp123()[1].rad() + "";
+                return sdp.tailAnlgesRel()[1].rad() + "";
             }
         },
         new Column("mp_angl3") {
             @Override
             public String apply(PairSnDef sdp) {
-                return sdp.mp123()[2].rad() + "";
+                return sdp.tailAnlgesRel()[2].rad() + "";
             }
         }
     };

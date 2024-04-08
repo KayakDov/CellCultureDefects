@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 public abstract class Defect implements hasChargeID {
 
     public SpaceTemp birth, death;
-    public final int ID;
+    public int ID;
     protected SnapDefect[] lifeCourse;
     private Defect twin, spouse;
 
@@ -203,8 +203,7 @@ public abstract class Defect implements hasChargeID {
     // toString method
     @Override
     public String toString() {
-        return lifeCourse == null ? getBirth() + " to " + getDeath()
-                : Arrays.toString(lifeCourse).replace(", (", ",\n(").replace("null,", "");
+        return "ID: " + getID() + " lived from " + getBirth() + " to " + getDeath() + "\n";
     }
 
     /**
@@ -245,7 +244,7 @@ public abstract class Defect implements hasChargeID {
      * @param time The time in question.
      * @return True if the defect existed at the given time, false otherwise.
      */
-    public boolean duringLifeTime(int time) {
+    public boolean aliveAt(int time) {
         if (time < getBirth().getTime() || time > getDeath().getTime())
             return false;
         if (lifeCourse != null) return snapFromFrame(time) != null;
@@ -464,5 +463,22 @@ public abstract class Defect implements hasChargeID {
      */
     protected int timeFromEvent(int frameNumber, boolean birth){
         return birth?frameNumber - getBirth().getTime(): getDeath().getTime() - frameNumber;
+    }
+
+    /**
+     * If the ID needs to be changed.
+     * @param Id 
+     */
+    public void setID(int Id) {
+        this.ID = Id;
+        Arrays.stream(lifeCourse).filter(snap -> snap != null).forEach(snap -> snap.setId(Id));
+    }
+    
+    /**
+     * Is this defect tracking its entire life course.
+     * @return True if this defect is tracking its entire life course, false otherwise.
+     */
+    public boolean isTrackingLifeCourse(){
+        return lifeCourse != null;
     }
 }

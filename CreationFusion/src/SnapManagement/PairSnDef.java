@@ -139,17 +139,19 @@ public class PairSnDef {
      *
      * @return The angles of the tails relative to one another.
      */
-    public Angle[] mp123() {
+    public Angle[] tailAnlgesRel() {
         return angles3(i -> neg.tailAngle()[i].minus(pos.tailAngle()));
     }
 
     /**
-     * The average of mp123 mod (2/3)pi.
+     * The average of tailAnlgesRel mod (2/3)pi.
      *
-     * @return The average of mp123 mod (2/3)pi.
+     * @return The average of tailAnlgesRel mod (2/3)pi.
      */
     public double mpPhase() {
-        return Arrays.stream(mp123()).mapToDouble(angle -> angle.rad()).average().getAsDouble() % (2 * Math.PI / 3); //TODO:Finding the avewrage of angles is not so simple.  Correct
+        return Arrays.stream(tailAnlgesRel())
+                .mapToDouble(angle -> angle.rad())
+                .average().getAsDouble() % (2 * Math.PI / 3); //TODO:Finding the avewrage of angles is not so simple.  Correct
     }
 
     /**

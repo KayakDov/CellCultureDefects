@@ -5,7 +5,7 @@ package GeometricTools;
  * @author E. Dov Neimand
  */
 public class Rectangle {
-    public final double x, y, width, height;
+    public final double x, y, width, height, nearEdge;
 
     /**
      * The dimensions of the rectangle.
@@ -13,26 +13,14 @@ public class Rectangle {
      * @param y The beginning of they-axis interval. 
      * @param width The length of the x-axis interval.
      * @param height The length of the y-axis interval.
+     * @param nearEdge A distance from the edge that's considered nearby.
      */
-    public Rectangle(double x, double y, double width, double height) {
+    public Rectangle(double x, double y, double width, double height, double nearEdge) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
-    }
-    
-    
-    /**
-     * The dimensions of the rectangle.
-     * @param loc The corner nearest the origin.
-     * @param width The length of the x-axis interval.
-     * @param height The length of the y-axis interval.
-     */
-    public Rectangle(Vec loc, double width, double height) {
-        this.x = loc.getX();
-        this.y = loc.getY();
-        this.width = width;
-        this.height = height;
+        this.nearEdge = nearEdge;
     }
     
     /**
@@ -61,11 +49,10 @@ public class Rectangle {
      * Is the proffered point inside the rectangle and near the edge?
      * If the point is outside the rectangle then the behaivure is undefined.
      * @param vec A point inside the rectangle that might or might not be near the edge.
-     * @param nearness How far from the edge the proffered point can be.
      * @return True if vec is near the edge, false otherwise.
      */
-    public boolean nearEdge(Vec vec, double nearness){
-        return vec.getX() < x + nearness || vec.getX() > x + width - nearness ||
-                vec.getY()< y + nearness || vec.getY() > y + height - nearness;
+    public boolean nearEdge(Vec vec){
+        return vec.getX() < x + nearEdge || vec.getX() > x + width - nearEdge ||
+                vec.getY()< y + nearEdge || vec.getY() > y + height - nearEdge;
     }
 }

@@ -103,7 +103,7 @@ public class NegDefect extends Defect {
     @Override
     public PairSnDef snapPairFromFrame(int time, boolean birth) {
         PosSnapDefect partnerSnap
-                = hasPair(birth) && getPair(birth).duringLifeTime(time)
+                = hasPair(birth) && getPair(birth).aliveAt(time)
                 ? getPair(birth).snapFromFrame(time)
                 : null;
 

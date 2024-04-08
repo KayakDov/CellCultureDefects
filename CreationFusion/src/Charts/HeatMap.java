@@ -17,6 +17,7 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 /**
  * A class for generating and displaying heat map charts.
@@ -24,93 +25,84 @@ import java.util.stream.DoubleStream;
 public class HeatMap extends ApplicationFrame {
 
     /**
-     * Creates a new heat map.
-     *
-     * @param title      the frame title.
-     * @param xAxisLabel the label for the x-axis.
-     * @param yAxisLabel the label for the y-axis.
-     * @param data       the list of data points.
-     * @param radius   the size of each grid cell.
-     * @param res The square root of the number of pixels.
-     * @param xMod A value if the x axis is modular, and Double.NaN if it's not.
-     * @param yMod Lke xMod, but for the y axis.
-     */
-    public HeatMap(String title, String xAxisLabel, String yAxisLabel, List<Vec> data, int radius, int res, double xMod, double yMod) {
-        super(title);
-        final JFreeChart chart = createChart(createDataset(data, res, res, radius, xMod, yMod), xAxisLabel, yAxisLabel);
-        setContentPane(new ChartPanel(chart));
-    }
+ * Creates a new heat map.
+ *
+ * @param title     the frame title.
+ * @param xAxisLabel the label for the x-axis.
+ * @param yAxisLabel the label for the y-axis.
+ * @param data      the list of data points.
+ * @param radius    the size of each grid cell.
+ * @param res       The square root of the number of pixels.
+ * @param xMod      A value if the x axis is modular, and Double.NaN if it's not.
+ * @param yMod      Like xMod, but for the y axis.
+ */
+public HeatMap(String title, String xAxisLabel, String yAxisLabel, List<Vec> data, double radius, int res, double xMod, double yMod) {
+    super(title);
+
+    DefaultXYZDataset dataSet = new DefaultXYZDataset();
+
+    double[][] values = heatField(region(data, xMod, yMod), res, res, data, radius, xMod, yMod);
+
+    dataSet.addSeries("", values);
+
+    NumberAxis xAxis = new NumberAxis(xAxisLabel),
+            yAxis = new NumberAxis(yAxisLabel);
+
+    // Adjust the range of the axes
+    double xMin = values[0][0];
+    double xMax = values[0][values[0].length - 1];
+    double yMin = values[1][0];
+    double yMax = values[1][values[1].length - 1];
+    xAxis.setRange(xMin, xMax);
+    yAxis.setRange(yMin, yMax);
+
+    LookupPaintScale paintScale = createPaintScale(values[2]);
+
+    XYBlockRenderer colorAssigner = new XYBlockRenderer();
+    colorAssigner.setPaintScale(paintScale);
+    XYPlot plot = new XYPlot(dataSet, xAxis, yAxis, colorAssigner);
+
+    JFreeChart chart = new JFreeChart(plot);
+    chart.addSubtitle(createPaintScaleLegend(paintScale));
+
+    ChartPanel cp = new ChartPanel(chart);
+
+    XYBlockRenderer blocks = colorAssigner;
+    blocks.setBlockWidth(0.5 / res);
+    blocks.setBlockHeight(0.5 / res);
+
+    setContentPane(cp);
+}
+
 
     /**
-     * Creates the heatmap chart.
-     *
-     * @param dataset    the dataset for the heatmap.
-     * @param xAxisLabel the label for the x-axis.
-     * @param yAxisLabel the label for the y-axis.
-     * @return the heatmap chart.
-     */
-    private static JFreeChart createChart(XYZDataset dataset, String xAxisLabel, String yAxisLabel) {
-        double[] zValues = extractZValues(dataset); // Get the intensity values from the dataset
-        NumberAxis xAxis = new NumberAxis(xAxisLabel),
-                   yAxis = new NumberAxis(yAxisLabel);
+ * Creates the paint scale for the plot, adjusting the range to go from 0 to maxZ.
+ *
+ * @param zValues the intensity values.
+ * @return the paint scale.
+ */
+private static LookupPaintScale createPaintScale(double[] zValues) {
+    double minZ = Arrays.stream(zValues).min().orElse(0);
+    double maxZ = Arrays.stream(zValues).max().orElse(0);
 
-        // Create a paint-scale and a legend showing it
-        LookupPaintScale paintScale = createPaintScale(zValues);
-        PaintScaleLegend psl = createPaintScaleLegend(paintScale);
+    if (minZ >= maxZ)
+        throw new RuntimeException("minZ = " + minZ + " and maxZ = " + maxZ);
 
-        // Create a renderer and a plot
-        XYPlot plot = new XYPlot(dataset, xAxis, yAxis, new XYBlockRenderer());
-        ((XYBlockRenderer) plot.getRenderer()).setPaintScale(paintScale);
+    LookupPaintScale paintScale = new LookupPaintScale(0, maxZ, Color.black);
+    Color c = Color.white;
+    paintScale.add(0.0, c);
+    paintScale.add(1, c = Color.green);
+    paintScale.add(maxZ * 0.125, c = c.darker());
+    paintScale.add(maxZ * 0.25, c.darker());
+    paintScale.add(maxZ * 0.375, c = Color.blue);
+    paintScale.add(maxZ * 0.5, c = c.darker());
+    paintScale.add(maxZ * 0.625, c.darker());
+    paintScale.add(maxZ * 0.75, c = Color.red.darker().darker());
+    paintScale.add(maxZ * 0.875, c = c.brighter());
+    paintScale.add(maxZ, c.brighter());
+    return paintScale;
+}
 
-        // Create the chart
-        JFreeChart chart = new JFreeChart(null, null, plot, false);
-        chart.addSubtitle(psl);
-        return chart;
-    }
-
-    /**
-     * Extracts the intensity values from the dataset.
-     *
-     * @param dataset the dataset for the heatmap.
-     * @return the intensity values.
-     */
-    private static double[] extractZValues(XYZDataset dataset) {
-        int seriesCount = dataset.getSeriesCount();
-        int itemCount = dataset.getItemCount(0);
-        double[] zValues = new double[itemCount];
-
-        for (int i = 0; i < itemCount; i++) {
-            zValues[i] = dataset.getZValue(0, i);
-        }
-
-        return zValues;
-    }
-
-    /**
-     * Creates the paint scale for the plot.
-     *
-     * @param zValues the intensity values.
-     * @return the paint scale.
-     */
-    private static LookupPaintScale createPaintScale(double[] zValues) {
-        double minZ = Arrays.stream(zValues).min().orElse(0);
-        double maxZ = Arrays.stream(zValues).max().orElse(0);
-        
-        if(minZ >= maxZ) throw new RuntimeException("minZ = " + minZ + " and maxZ = " + maxZ);
-
-        LookupPaintScale paintScale = new LookupPaintScale(minZ, maxZ, Color.black);
-        Color c = Color.green;
-        paintScale.add(0.0, c);
-        paintScale.add(33.0, c = c.darker());
-        paintScale.add(66.0, c.darker());
-        paintScale.add(100.0, c = Color.blue);
-        paintScale.add(133.0, c = c.darker());
-        paintScale.add(166.0, c.darker());
-        paintScale.add(200.0, c = Color.red.darker().darker());
-        paintScale.add(233.0, c = c.brighter());
-        paintScale.add(266.0, c.brighter());
-        return paintScale;
-    }
 
     /**
      * Creates the paint scale legend for the plot.
@@ -127,89 +119,79 @@ public class HeatMap extends ApplicationFrame {
     }
 
     /**
-     * The x values.
-     * @param data The source.
-     * @return The x values.
-     */
-    private static DoubleStream get(List<Vec> data, boolean isX){
-        return data.stream().mapToDouble(datum -> isX?datum.getX():datum.getY());
-    }
-    
-    
-    
-    /**
-     * Constructs a heat field. The number of points is xRes * yRes.
-     * @param reigon
-     * @param xRes The x resolution.  Big number is higher resolution.
-     * @param yRes The y resolution.  Big number is higher resolution.
-     * @param data The data used to generate the field.
-     * @param r The heat value of a point is the number of data within this radius from the point.
-     * @param xMod The modularity of the x axis.
-     * @param yMod The modularity of the y axis.
-     * @return The heat field.
-     */
-    private static double[][] heatField(GeometricTools.Rectangle reigon, int xRes, int yRes, List<Vec> data, double r, double xMod, double yMod) {
-
-        double[][] x = new double[3][xRes*yRes];
-                
-        double dx = reigon.width/xRes, dy = reigon.height/yRes;
-
-        Arrays.setAll(x[0], i -> (reigon.x + (i%yRes) * dx));
-        Arrays.setAll(x[1], i -> reigon.y + (i/xRes) * dy);
-        Arrays.setAll(x[2], i -> data.stream().filter(vec -> new Vec(x[0][i], x[1][i]).dist(vec, xMod, yMod) < r).count());
-        
-        
-        return x;
-    }
-    
-    /**
      * The region that the data is in.
+     *
      * @param data The data in the region.
      * @param xMod If the x axis is modular, if it's not pass Double.NaN.
      * @param yMod If the y axis is modular, if it's not pass Double.NaN.
      * @return The region the data is in.
      */
-    private static GeometricTools.Rectangle region(List<Vec> data, double xMod, double yMod){
+    private static GeometricTools.Rectangle region(List<Vec> data, double xMod, double yMod) {
         double xMin, xMax, yMin, yMax;
         
-        if(Double.isFinite(xMod)){
-            xMin = 0; 
+        if (Double.isFinite(xMod)) {
+            xMin = 0;
             xMax = xMod;
-        }else{
+        } else {
             xMin = get(data, true).min().getAsDouble();
             xMax = get(data, true).max().getAsDouble();
         }
-        
-        if(Double.isFinite(yMod)){
-            yMin = 0; 
+
+        if (Double.isFinite(yMod)) {
+            yMin = 0;
             yMax = yMod;
-        }else{
+        } else {
             yMin = get(data, false).min().getAsDouble();
             yMax = get(data, false).max().getAsDouble();
-        }       
-        
-        return new GeometricTools.Rectangle(xMin, yMin, xMax - xMin, yMax - yMin);
+        }
+
+        return new GeometricTools.Rectangle(xMin, yMin, xMax - xMin, yMax - yMin, 0);
     }
-    
+
     /**
-     * Creates the dataset for the heatmap.
+     * The x values.
      *
-     * @param data     the list of data points.
-     * @param xRes The number of cells on the x dimension.
-     * @param yRes The number of cells on the y dimension.
-     * @param xMod The modularity of the x axis.
-     * @param yMod The modularity of the y axis.
-     * @param radius The heat of a point is the sum of data points within the radius.
-     * @return the dataset for the heatmap.
+     * @param data The source.
+     * @return The x values.
      */
-    public static XYZDataset createDataset(List<Vec> data, int xRes, int yRes, double xMod, double yMod, double radius) {
-
-        DefaultXYZDataset dataset = new DefaultXYZDataset();
-        dataset.addSeries("", heatField(region(data, xMod, yMod), xRes, yRes, data, radius, xMod, yMod));
-        return dataset;
+    private static DoubleStream get(List<Vec> data, boolean isX) {
+        return data.stream().mapToDouble(datum -> isX ? datum.getX() : datum.getY());
     }
 
-    
+    /**
+     * Constructs a heat field. The number of points is xRes * yRes.
+     *
+     * @param region The region.
+     * @param xRes   The x resolution. Big number is higher resolution.
+     * @param yRes   The y resolution. Big number is higher resolution.
+     * @param data   The data used to generate the field.
+     * @param r      The heat value of a point is the number of data within this
+     *               radius from the point.
+     * @param xMod   The modularity of the x axis.
+     * @param yMod   The modularity of the y axis.
+     * @return The heat field.
+     */
+    private static double[][] heatField(GeometricTools.Rectangle region, int xRes, int yRes, List<Vec> data, double r, double xMod, double yMod) {
+
+        double dx = region.width / xRes;
+        double dy = region.height / yRes;
+
+        double x[] = new double[xRes * yRes];
+        double y[] = new double[xRes * yRes];
+        double z[] = new double[xRes * yRes];
+
+        IntStream.range(0, xRes * yRes).parallel().forEach(i -> {
+
+            x[i] = region.x + (i % xRes) * dx;
+            y[i] = region.y + (i / yRes) * dy;
+            z[i] = data.stream()
+                    .filter(vec -> new Vec(x[i], y[i]).dist(vec, xMod, yMod) < r)
+                    .count();
+        });
+
+        return new double[][]{x, y, z};
+    }
+
     /**
      * Factory method to create a HeatMap instance.
      *
@@ -217,12 +199,13 @@ public class HeatMap extends ApplicationFrame {
      * @param xAxisLabel the label for the x-axis.
      * @param yAxisLabel the label for the y-axis.
      * @param data       the list of data points.
-     * @param res The number of pixels
-     * @param r   the size of each grid cell.
+     * @param res        The number of pixels
+     * @param r          the size of each grid cell.
      */
-    public static void factory(String title, String xAxisLabel, String yAxisLabel, List<Vec> data, int res, int r){
+    public static void factory(String title, String xAxisLabel, String yAxisLabel, List<Vec> data, int res, int r) {
         factory(title, xAxisLabel, yAxisLabel, data, res, r, Double.NaN, Double.NaN);
     }
+
     /**
      * Factory method to create a HeatMap instance.
      *
@@ -230,12 +213,12 @@ public class HeatMap extends ApplicationFrame {
      * @param xAxisLabel the label for the x-axis.
      * @param yAxisLabel the label for the y-axis.
      * @param data       the list of data points.
-     * @param res The resolution. Higher number is more detail.
-     * @param r   the size of each grid cell.
-     * @param xMod The modularity of the x axis.
-     * @param yMod The modularity of the y axis.
+     * @param res        The resolution. Higher number is more detail.
+     * @param r          the size of each grid cell.
+     * @param xMod       The modularity of the x axis.
+     * @param yMod       The modularity of the y axis.
      */
-    public static void factory(String title, String xAxisLabel, String yAxisLabel, List<Vec> data, int res, int r, double xMod, double yMod) {
+    public static void factory(String title, String xAxisLabel, String yAxisLabel, List<Vec> data, int res, double r, double xMod, double yMod) {
         HeatMap hm = new HeatMap(title, xAxisLabel, yAxisLabel, data, r, res, xMod, yMod);
         hm.pack();
         hm.setVisible(true);

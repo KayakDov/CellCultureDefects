@@ -11,7 +11,7 @@ public abstract class SnapDefect implements hasChargeID {
 
     public final SpaceTemp loc;
 
-    private final int id;
+    private int id;
 
     public final static int NO_ID = Integer.MAX_VALUE;
 
@@ -121,7 +121,7 @@ public abstract class SnapDefect implements hasChargeID {
 
     @Override
     public String toString() {
-        return loc.toString() + ", charge = " + (getCharge() ? "pos" : "neg") + ", id = " + getID();
+        return loc.toString() + ", charge = " + (getCharge() ? "pos" : "neg") + ", id = " + getID() + "\n";
     }
     
     /**
@@ -132,4 +132,13 @@ public abstract class SnapDefect implements hasChargeID {
         return loc.getTime();
     }
 
+    /**
+     * Resets the ID
+     * @param id The new ID.
+     */
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    
 }

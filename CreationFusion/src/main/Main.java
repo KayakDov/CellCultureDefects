@@ -1,15 +1,24 @@
 package main;
 
+import Annalysis.ChargeTracker;
 import Charts.HeatMap;
+import Charts.LineChart;
 import Charts.NamedData;
+import Charts.ScatterPlot;
 import snapDefects.SpaceTemp;
 import GeometricTools.Rectangle;
+import GeometricTools.SpaceTimeBall;
+import GeometricTools.Vec;
 import ReadWrite.DefaultWriter;
 import ReadWrite.ReadManager;
 import defectManagement.DefectManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 
 /**
  *
@@ -34,7 +43,7 @@ public class Main {
         double width = Double.parseDouble(args[windowIndex + 3]);
         double height = Double.parseDouble(args[windowIndex + 4]);
 
-        return new Rectangle(x, y, width, height);
+        return new Rectangle(x, y, width, height, distEdge(args));
     }
 
     /**
@@ -90,21 +99,30 @@ public class Main {
      * Working on the bacteria file.
      */
     public static void bacteriaWork() {
-        DefectManager dm = new DefectManager(
-                ReadManager.defaultFileFormat("PlusAndMinusTM6.csv"),
-                new Rectangle(900, 0, 900, 900),
-                2, 20, 4, 20);
+        DefectManager dm = DefaultData.bacteria();
 
+        System.out.println(dm.pairs(DefectManager.DEATH).count());
         
         NamedData mpPhaseOfMpAngle = dm.getNamedData(
-                p -> p.mpAngle().deg(), 
                 p -> p.mpPhase(), 
+                p -> p.mpAngle().deg(),                 
                 DefectManager.DEATH, 
                 "", 
                 15
         );
         
-        HeatMap.factory("Bacteria", "mpAngle", "mpPhase", mpPhaseOfMpAngle.data, 1000, 200, 2*Math.PI, 2*Math.PI/3);
+        HeatMap.factory(
+                "Bacteria", 
+                "mpAngle", 
+                "mpPhase", 
+                mpPhaseOfMpAngle.data, 
+                900, 
+                .5, 
+                2*Math.PI/3,
+                2*Math.PI
+                );
+        
+        ScatterPlot.factory("Bacteria", "mpPhase", "mpAngle", mpPhaseOfMpAngle);
         
     }
 
@@ -144,10 +162,9 @@ public class Main {
             DefectManager dm = new DefectManager(
                     ReadManager.defaultFileFormat(fileName),
                     getWindow(args),
-                    timeThreshold(args),
-                    distThreshold(args),
-                    timeEdge(args),
-                    distEdge(args)
+                    new SpaceTimeBall(timeThreshold(args), distThreshold(args)),                    
+                    timeEdge(args)
+                    
             );
             writer.setIdBegin(fileName.replaceAll("[^0-9]", "") + ".");//Sets the ID prefix to be the numbers in the file name.
             dm.writePairesToFile(writer);
@@ -161,20 +178,14 @@ public class Main {
      */
     public static void cellExperiments() throws IOException {
 
-        String parent = "plusMinusTMs//OneTenElevenTwelve";
-        String[] files = Arrays.stream(new File(parent).list()).map(str -> parent + "//" + str).toArray(String[]::new);
-
-        DefaultWriter writer = new DefaultWriter("cellPairs_1_10_11_12.csv");
-
-        for (String fileName : files) {
-            DefectManager dm = new DefectManager(
-                    ReadManager.defaultFileFormat(fileName),
-                    new Rectangle(0, 0, 2050, 2050), 2, 40, 6, 80
-            );
-            writer.setIdBegin(fileName.replaceAll("[^0-9]", "") + ".");
-            dm.writePairesToFile(writer);
-        }
-
+        DefectManager dm = DefaultData.Cells_14_15_19();
+                        
+        ChargeTracker ct = new ChargeTracker(dm, "bacteria");
+        
+        System.out.println(dm.totalCharge());
+        
+        System.out.println(Arrays.stream(dm.frames()).mapToInt(frame -> frame.charge()).sum());
+        
     }
 
     /**
@@ -183,8 +194,8 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
 
-        bacteriaWork();
-//        cellExperiments();
+//        bacteriaWork();
+        cellExperiments();
 //        parseArgs(args);
     }
 

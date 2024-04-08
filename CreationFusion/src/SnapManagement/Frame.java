@@ -32,8 +32,8 @@ public class Frame {
      * The charge of the frame at this time.
      * @return The charge of all the defects in the frame at this time.
      */
-    public double charge(){
-        return (posDefects.size() - negDefects.size())*0.5;
+    public int charge(){
+        return (posDefects.size() - negDefects.size());
     }
     
     /**
@@ -98,5 +98,12 @@ public class Frame {
         return map(charge).containsKey(id);
     }
     
+    /**
+     * The number od snap defects in this frame.
+     * @return The number od snap defects in this frame.
+     */
+    public int size(){
+        return posDefects.size() + negDefects.size();
+    }
     
 }

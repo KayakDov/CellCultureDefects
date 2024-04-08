@@ -92,7 +92,7 @@ public class Vec {
      * @param xMod The modularity of the x axis.
      * @return The distance between this location and the specified location.
      */
-    public double dist(Vec loc, double yMod, double xMod) {
+    public double dist(Vec loc, double xMod, double yMod) {
         double dx = Angle.modDif(x, loc.x, xMod);
         double dy = Angle.modDif(y, loc.y, yMod);
         return Math.sqrt(dx * dx + dy * dy);
