@@ -1,7 +1,7 @@
 package ReadWrite;
 
 import GeometricTools.Vec;
-import SnapManagement.PairSnDef;
+import SnapManagement.PairedSnDef;
 import defectManagement.DefectManager;
 import java.io.IOException;
 import java.util.Arrays;
@@ -75,7 +75,7 @@ public class DefaultWriter extends FormatedFileWriter {
             this.charge = charge;
         }
         
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return prefix + (charge?sdp.pos:sdp.neg).getID() + "";
         }
 
@@ -100,7 +100,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column frame = new Column("FRAME") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return sdp.pos.loc.getTime() + "";
         }
     };
@@ -110,7 +110,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column posX = new Column("xp") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return sdp.pos.loc.getX() + "";
         }
     };
@@ -120,7 +120,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column posY = new Column("yp") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return sdp.pos.loc.getY() + "";
         }
     };
@@ -130,7 +130,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column posTail = new Column("angp1") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return sdp.pos.tailAngle().rad() + "";
         }
     };
@@ -145,7 +145,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column negX = new Column("xm") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return sdp.neg.loc.getX() + "";
         }
     };
@@ -155,7 +155,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column negY = new Column("ym") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return sdp.neg.loc.getY() + "";
         }
     };
@@ -166,19 +166,19 @@ public class DefaultWriter extends FormatedFileWriter {
     public static Column[] negTail = new Column[]{
         new Column("angm1") {
             @Override
-            public String apply(PairSnDef sdp) {
+            public String apply(PairedSnDef sdp) {
                 return sdp.neg.tailAngle()[0].rad() + "";
             }
         },
         new Column("angm2") {
             @Override
-            public String apply(PairSnDef sdp) {
+            public String apply(PairedSnDef sdp) {
                 return sdp.neg.tailAngle()[1].rad() + "";
             }
         },
         new Column("angm3") {
             @Override
-            public String apply(PairSnDef sdp) {
+            public String apply(PairedSnDef sdp) {
                 return sdp.neg.tailAngle()[2].rad() + "";
             }
         }
@@ -191,7 +191,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column dist = new Column("distance") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return sdp.dist() + "";
         }
     };
@@ -201,7 +201,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column mpAngle = new Column("mp_angle") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return sdp.mpAngle().rad() + "";
         }
     };
@@ -211,7 +211,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column anglePRel = new Column("angp1_rel") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return sdp.anglePRel().rad() + "";
         }
     };
@@ -222,19 +222,19 @@ public class DefaultWriter extends FormatedFileWriter {
     public static Column[] angleMRel = new Column[]{
         new Column("angm1_rel") {
             @Override
-            public String apply(PairSnDef sdp) {
+            public String apply(PairedSnDef sdp) {
                 return sdp.ang123Rel()[0].rad() + "";
             }
         },
         new Column("angm2_rel") {
             @Override
-            public String apply(PairSnDef sdp) {
+            public String apply(PairedSnDef sdp) {
                 return sdp.ang123Rel()[1].rad() + "";
             }
         },
         new Column("angm3_rel") {
             @Override
-            public String apply(PairSnDef sdp) {
+            public String apply(PairedSnDef sdp) {
                 return sdp.ang123Rel()[2].rad() + "";
             }
         }
@@ -245,7 +245,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column fuseUp = new Column("fuse_up") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return sdp.fuseUp ? "TRUE" : "FALSE";
         }
     };
@@ -255,7 +255,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column pVelAngle = new Column("p_vel_angle") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             Vec vel = sdp.pos.getVelocity();
             return (vel != null ? vel.angle().rad() : "") + "";
         }
@@ -266,7 +266,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column pVelAngleRel = new Column("p_vel_angle_rel") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             Vec vel = sdp.relVelocity();
             return vel != null ? vel.angle().rad() + "" : "";
         }
@@ -277,7 +277,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column anglePRelVelAngle = new Column("anglep1_rel_vel_angle") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return sdp.anglep1_rel_vel_angle().rad() + "";
         }
     };
@@ -287,7 +287,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column fusion = new Column("fusion") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return !sdp.birth ? "TRUE" : "FALSE";
         }
     };
@@ -297,7 +297,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column creation = new Column("creation") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return sdp.birth ? "TRUE" : "FALSE";
         }
     };
@@ -308,19 +308,19 @@ public class DefaultWriter extends FormatedFileWriter {
     public static Column[] mpTailAngleRel = new Column[]{
         new Column("mp_angl1") {
             @Override
-            public String apply(PairSnDef sdp) {
+            public String apply(PairedSnDef sdp) {
                 return sdp.tailAnlgesRel()[0].rad() + "";
             }
         },
         new Column("mp_angl2") {
             @Override
-            public String apply(PairSnDef sdp) {
+            public String apply(PairedSnDef sdp) {
                 return sdp.tailAnlgesRel()[1].rad() + "";
             }
         },
         new Column("mp_angl3") {
             @Override
-            public String apply(PairSnDef sdp) {
+            public String apply(PairedSnDef sdp) {
                 return sdp.tailAnlgesRel()[2].rad() + "";
             }
         }
@@ -331,7 +331,7 @@ public class DefaultWriter extends FormatedFileWriter {
      */
     public static Column mpPhase = new Column("mp_phase") {
         @Override
-        public String apply(PairSnDef sdp) {
+        public String apply(PairedSnDef sdp) {
             return sdp.mpPhase() + "";
         }
     };

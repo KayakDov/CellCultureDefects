@@ -1,5 +1,6 @@
 package snapDefects;
 
+import GeometricTools.SpaceTimeBall;
 import GeometricTools.Vec;
 
 
@@ -64,12 +65,11 @@ public class SpaceTemp extends Vec {
     /**
      * Checks if this space-time point is near another space-time point within given thresholds.
      * @param st The other space-time point.
-     * @param distThreshold The maximum spatial distance threshold.
-     * @param timeThreshold The maximum time difference threshold.
+     * @param proximity The definition of closeness.
      * @return true if the points are within the specified spatial and temporal thresholds, false otherwise.
      */
-    public boolean near(SpaceTemp st, double distThreshold, double timeThreshold) {
-        return dist(st) <= distThreshold && Math.abs(time - st.time) <= timeThreshold;
+    public boolean near(SpaceTemp st, SpaceTimeBall proximity) {
+        return dist(st) <= proximity.rSpace && Math.abs(time - st.time) <= proximity.rTime;
     }
 
     @Override

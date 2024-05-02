@@ -17,7 +17,6 @@ import java.util.function.IntToDoubleFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import snapDefects.NegSnapDefect;
 import snapDefects.PosSnapDefect;
 
@@ -121,9 +120,9 @@ public class DefectManager {
 
         loadDefects();
 
-        numEligableForTwin = eligable(positives(), window, timeToEdge, BIRTH).count();
-        numEligibleForSpouse = eligable(positives(), window, timeToEdge, DEATH).count();
-        numEligableForSpouseAndTwin = eligable(eligable(positives(), window, timeToEdge, BIRTH), window, timeToEdge, DEATH).count();
+        Stream.of(BIRTH, DEATH).parallel().forEach(birth -> 
+                all().forEach(def -> def.setEligable(birth, !nearEdge(def, window, timeToEdge, birth)))
+        );
 
         Stream.of(BIRTH, DEATH).parallel().forEach(event -> pairDefects(window, ball, timeToEdge, event));
 
@@ -327,10 +326,10 @@ public class DefectManager {
      * @return True if the snap Defect is near the edge, false otherwise.
      */
     public boolean nearEdge(Defect def, Rectangle window, int timeToEdge, boolean birth) {
-        SpaceTemp sd = def.get(birth);
-        return window.nearEdge(sd)
-                || sd.getTime() < timeToEdge
-                || sd.getTime() > getEndTime() - timeToEdge;
+        SpaceTemp spaceTemp = def.get(birth);
+        return window.nearEdge(spaceTemp)
+                || spaceTemp.getTime() < timeToEdge
+                || spaceTemp.getTime() > getEndTime() - timeToEdge;
     }
 
     /**
@@ -344,9 +343,9 @@ public class DefectManager {
     public final void pairDefects(Rectangle window, SpaceTimeBall ball, int timeToEdge, boolean birth) {
         clearPairing(birth);
 
-        Set<NegDefect> possiblePairs = new HashSet<>(negDefects);
+        Set<NegDefect> possiblePairs = negDefects.stream().filter(neg -> neg.isEligable(birth)).collect(Collectors.toSet());
 
-        positives().forEach(lonely
+        positives().filter(pos -> pos.isEligable(birth)).forEach(lonely
                 -> lonely.setPair(
                         getPair(lonely, possiblePairs, window, ball, timeToEdge, birth),
                         birth
@@ -440,10 +439,11 @@ public class DefectManager {
      * pairs.
      * @return All the pairs for all the defects.
      */
-    public Stream<PairSnDef> pairs(boolean birth) {
+    public Stream<PairedSnDef> pairs(boolean birth) {
         return positives()
                 .filter(posDef -> posDef.hasPair(birth))
-                .flatMap(posDef -> posDef.defectPairs(birth));
+                .flatMap(posDef -> posDef.defectPairs(birth))
+                .filter(pair -> pair.workingPair());
     }
 
     /**
@@ -469,7 +469,6 @@ public class DefectManager {
     public NegDefect getPair(PosDefect lonely, Set<NegDefect> eligibles, Rectangle window, SpaceTimeBall ball, int timeToEdge, final boolean birth) {
         NegDefect closest = eligibles.stream()
                 .parallel()
-                .filter(elig -> !nearEdge(elig, window, timeToEdge, birth))
                 .filter(eligable -> ball.near(eligable.get(birth), lonely.get(birth)))
                 .min(Comparator.comparing(eligable -> eligable.get(birth).dist(lonely.get(birth))))
                 .orElse(null);
@@ -659,7 +658,7 @@ public class DefectManager {
      * defect. This is roughly the number of frames desired.
      * @return Data points generated from all the pairs.
      */
-    public NamedData getNamedData(Function<PairSnDef, Double> x, Function<PairSnDef, Double> y, boolean birth, String name, int numPairs) {
+    public NamedData getNamedData(Function<PairedSnDef, Double> x, Function<PairedSnDef, Double> y, boolean birth, String name, int numPairs) {
         return new NamedData(
                 defectStream(POS)
                         .filter(def -> def.hasPair(birth))
@@ -735,6 +734,25 @@ public class DefectManager {
     public List<Vec> ofTime(IntToDoubleFunction f) {
         return timeStream().mapToObj(i -> new Vec(i, f.applyAsDouble(i))).collect(Collectors.toList());
     }
+    
+    /**
+     * Returns a bunch of data points, with x values the distance between the 
+     * paired defects and y values f(pair)
+     * @param f
+     * @param birth True for twins, false for spouses.
+     * @return Returns a bunch of data points, with x values the distance between the 
+     * paired defects and y values f(pair)
+     */
+    public List<Vec> pairsAtDistance(Function<PairedSnDef, Double> f, boolean birth, double maxDist){
+        return  pairedPos(birth)
+                .flatMap(posDef -> posDef.defectPairs(birth))
+                .filter(pair -> pair.dist() < maxDist)
+                .map(pair -> new Vec(pair.dist(), f.apply(pair)))
+                .collect(Collectors.toList());
+    }
+    
+    
+    
 
     /**
      * All of the frames.
@@ -772,4 +790,40 @@ public class DefectManager {
     public int totalCharge() {
         return posSnaps.size() - negSnaps.size();
     }
+    
+    private String name = "";
+
+    /**
+     * Gets the name of this defect manager.
+     * @return The name of this defect manager.
+     */
+    public String getName() {
+        return name;
+    }
+
+    /** 
+     * Sets the name of this defect manager.
+     * @param name The name of this defect manager.
+     */
+    public DefectManager setName(String name) {
+        this.name = name;
+        return this;
+    }
+    
+    /**
+     * A stream of all the pairs of defects that nearly collide.  Note, these may
+     * or may not be fusion or creation pairs.
+     * @param near A definition of proximity
+     * @return A stream of all the pairs of defects that nearly collide.  Note, these may
+     * or may not be fusion or creation pairs.
+     */
+    public Stream<PairSnDef> nearCollsionsSnPairs(double near){
+        
+        return Arrays.stream(frames()).flatMap(frame -> 
+                frame.positives().flatMap(pos -> 
+                        frame.negatives().filter(neg -> neg.loc.dist(pos.loc) < near)
+                                .map(neg -> new PairSnDef(pos, neg)))
+        );
+    }
+    
 }

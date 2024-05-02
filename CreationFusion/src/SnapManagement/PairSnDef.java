@@ -1,23 +1,20 @@
 package SnapManagement;
 
 import GeometricTools.Angle;
-import snapDefects.PosSnapDefect;
-import snapDefects.NegSnapDefect;
+import GeometricTools.SpaceTimeBall;
 import GeometricTools.Vec;
+import defectManagement.DefectManager;
 import java.util.Arrays;
 import java.util.function.Function;
+import snapDefects.NegSnapDefect;
+import snapDefects.PosSnapDefect;
 
 /**
  *
  * @author E. Dov Neimand
  */
 public class PairSnDef {
-
     
-    /**
-     * The amount of time from the event, birth or death 
-     */
-    public final int timeFromEvent;
     /**
      * The positive defect in the pair.
      */
@@ -28,9 +25,14 @@ public class PairSnDef {
     public final NegSnapDefect neg;
 
     /**
-     * true if this is a pair of twins, false if this is a spouse pair.
+     * Constructs a pair of snap defects.
+     * @param pos The positive defect.
+     * @param neg The negative defect.
      */
-    public final boolean birth;
+    public PairSnDef(PosSnapDefect pos, NegSnapDefect neg) {
+        this.pos = pos;
+        this.neg = neg;
+    }
 
     /**
      * Are both defects functional?
@@ -39,30 +41,6 @@ public class PairSnDef {
      */
     public boolean workingPair() {
         return pos != null && neg != null;
-    }
-
-    /**
-     * True if the tail of the positive points counterclockwise to the negative
-     * defect most of the time, false otherwise.
-     */
-    public final boolean fuseUp;
-
-    /**
-     * Creates a pair of oppositely charged snap defects.
-     *
-     * @param pos A defect.
-     * @param neg A defect with opposite charge of a.
-     * @param fuseUp True if the positive snap defect points clockwise around
-     * the negative snap defect on average.
-     * @param timeFromEvent The amount of time from the birth or death event.
-     * @param birth True if they are twins, false if they are fusion partners.
-     */
-    public PairSnDef(PosSnapDefect pos, NegSnapDefect neg, boolean fuseUp, int timeFromEvent, boolean birth) {
-        this.pos = pos;
-        this.neg = neg;
-        this.birth = birth;
-        this.fuseUp = fuseUp;
-        this.timeFromEvent = timeFromEvent;
     }
 
     /**
@@ -76,8 +54,10 @@ public class PairSnDef {
         return pos.loc.dist(neg.loc);
     }
 
+    
+    
     /**
-     *      *
+     * 
      * The black line relative to the x axis, equivalently, the angle of the
      * vector from the minus defect to the positive defect.
      *
@@ -108,9 +88,17 @@ public class PairSnDef {
      */
     public Angle[] ang123Rel() {
         return angles3(i -> neg.tailAngle()[i].minus(mpAngle()));
-
     }
 
+    /**
+     * Does this defect have a velocity?
+     * @return True if the defect has a velocity, false otherwise.
+     */
+    public boolean hasVelocity(){
+        return pos.getVelocity() != null && neg.getVelocity() != null && 
+                pos.getVelocity().isFinite() && neg.getVelocity().isFinite();
+    }
+    
     /**
      * The movement of the positive defect relative to the negative defect.
      *
@@ -125,9 +113,10 @@ public class PairSnDef {
     /**
      * Creates a new array with 3 angles in it.
      *
+     * @param f a function to use on the three angles.
      * @return A new array with 3 angles in it.
      */
-    private Angle[] angles3(Function<Integer, Angle> f) {
+    protected Angle[] angles3(Function<Integer, Angle> f) {
         if (!workingPair()) return new Angle[0];
         Angle[] angles3 = new Angle[3];
         Arrays.setAll(angles3, i -> f.apply(i));
@@ -149,9 +138,7 @@ public class PairSnDef {
      * @return The average of tailAnlgesRel mod (2/3)pi.
      */
     public double mpPhase() {
-        return Arrays.stream(tailAnlgesRel())
-                .mapToDouble(angle -> angle.rad())
-                .average().getAsDouble() % (2 * Math.PI / 3); //TODO:Finding the avewrage of angles is not so simple.  Correct
+        return Arrays.stream(tailAnlgesRel()).mapToDouble(angle -> angle.rad()).average().getAsDouble() % (2 * Math.PI / 3); //TODO:Finding the avewrage of angles is not so simple.  Correct
     }
 
     /**
@@ -165,5 +152,37 @@ public class PairSnDef {
         if (pos.getVelocity() == null) return Angle.NaN;
         return anglePRel().minus(pos.getVelocity().angle());
     }
-
+    
+    /**
+     * The positive defect.
+     * @param dm The defect manager.
+     * @return The positive defect.
+     */
+    private PosDefect posDef(DefectManager dm){
+        return (PosDefect)dm.getDefect(pos);
+    }
+    
+    /**
+     * The negative defect.
+     * @param dm The defect manager.
+     * @return The negative defect.
+     */
+    private NegDefect negDef(DefectManager dm){
+        return (NegDefect)dm.getDefect(neg);
+    }
+    
+    /**
+     * These two SnapDefects' defects are pairs.
+     * @param proximity How close they need to be together at birth/death to be 
+     * considered a pair.
+     * @param dm The defect manager.
+     * @param birth The event in questions is birth, true, or annihilation false.
+     * @return True if the they are born (for birth == true) or die 
+     * (for birth == false) together.
+     */
+    public boolean shareEvent(SpaceTimeBall proximity, DefectManager dm, boolean birth){
+        return proximity.near(posDef(dm).get(birth), dm.getDefect(neg).get(birth));
+    }
+   
+    
 }

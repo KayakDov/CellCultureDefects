@@ -70,7 +70,7 @@ public class Angle {
     }
     
     /**
-     * The vector on the unit circle represented by this angle.
+     * The unit vector represented by this angle.
      * @return 
      */
     public Vec vec(){

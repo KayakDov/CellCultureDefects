@@ -1,5 +1,6 @@
 package main;
 
+import Annalysis.BirthAndDeathTracker;
 import Annalysis.ChargeTracker;
 import Charts.HeatMap;
 import Charts.LineChart;
@@ -178,13 +179,12 @@ public class Main {
      */
     public static void cellExperiments() throws IOException {
 
-        DefectManager dm = DefaultData.Cells_14_15_19();
+        DefectManager dm = DefaultData.bacteria();
                         
-        ChargeTracker ct = new ChargeTracker(dm, "bacteria");
+        BirthAndDeathTracker ct = new BirthAndDeathTracker(dm);
         
-        System.out.println(dm.totalCharge());
+        ct.speedFunctionOfAngle(DefectManager.DEATH);
         
-        System.out.println(Arrays.stream(dm.frames()).mapToInt(frame -> frame.charge()).sum());
         
     }
 

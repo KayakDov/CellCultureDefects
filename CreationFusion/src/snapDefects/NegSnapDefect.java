@@ -1,6 +1,9 @@
 package snapDefects;
 
 import GeometricTools.Angle;
+import SnapManagement.Defect;
+import SnapManagement.NegDefect;
+import SnapManagement.PosDefect;
 import java.util.Arrays;
 
 /**
@@ -52,6 +55,16 @@ public class NegSnapDefect extends SnapDefect{
     }
     
     
+    @Override
+    public NegDefect getDefect() {
+        return (NegDefect)defect;
+    }
+
+    @Override
+    public NegSnapDefect setDefect(Defect defect) {
+        super.setDefect(defect);
+        return this;
+    }
     
     
 }

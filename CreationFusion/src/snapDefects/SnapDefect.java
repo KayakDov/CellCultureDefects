@@ -2,6 +2,7 @@ package snapDefects;
 
 import GeometricTools.Angle;
 import GeometricTools.Vec;
+import SnapManagement.Defect;
 import defectManagement.hasChargeID;
 
 /**
@@ -85,12 +86,10 @@ public abstract class SnapDefect implements hasChargeID {
      * @param next The next snap defect for the defect.
      */
     public void setVelocity(SnapDefect prev, SnapDefect next) {
-        boolean badPrev = prev == null || (prev.loc.getTime() != loc.getTime() - 1 && prev.loc.getTime() != loc.getTime()) ;
+        boolean badPrev = prev == null || (prev.loc.getTime() != loc.getTime() - 1 && prev.loc.getTime() != loc.getTime());
         boolean badNext = next == null || (next.loc.getTime() != loc.getTime() + 1 && next.loc.getTime() != loc.getTime());
 
-        if (badPrev && badNext);
-
-        else if (badPrev) setVelocity(this, next);
+        if (badPrev && badNext); else if (badPrev) setVelocity(this, next);
 
         else if (badNext) setVelocity(prev, this);
 
@@ -123,22 +122,45 @@ public abstract class SnapDefect implements hasChargeID {
     public String toString() {
         return loc.toString() + ", charge = " + (getCharge() ? "pos" : "neg") + ", id = " + getID() + "\n";
     }
-    
+
     /**
      * The time of this SnapDefect.
+     *
      * @return The time of this SnapDefect.
      */
-    public int getTime(){
+    public int getTime() {
         return loc.getTime();
     }
 
     /**
      * Resets the ID
+     *
      * @param id The new ID.
      */
     public void setId(int id) {
         this.id = id;
     }
 
-    
+    protected Defect defect;
+
+    /**
+     * The defect to which this is linked.
+     *
+     * @return The defect to which this is linked.
+     */
+    public abstract Defect getDefect();
+
+    /**
+     * Sets the defect.
+     *
+     * @param defect The defect attached to this snap defect.
+     * @return this;
+     */
+    public SnapDefect setDefect(Defect defect) {
+        if (defect.getCharge() != getCharge())
+            throw new RuntimeException("charge mismatch");
+        this.defect = defect;
+        return this;
+    }
+
 }

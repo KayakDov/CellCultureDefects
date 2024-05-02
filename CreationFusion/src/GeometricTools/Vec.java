@@ -36,7 +36,16 @@ public class Vec {
      * @return The norm of this vector.
      */
     public double norm(){
-        return Math.sqrt(x*x + y*y);
+        return Math.sqrt(dot(this));
+    }
+    
+    /**
+     * The dot product of this vector and another.
+     * @param other The other vector.
+     * @return The dot product.
+     */
+    public double dot(Vec other){
+        return x*other.x + y*other.y;
     }
     
     /**
@@ -160,4 +169,12 @@ public class Vec {
      * The origin.
      */
     public static Vec origin = new Vec(0, 0);
+    
+    /**
+     * Double.isFinite on the x and y values.
+     * @return 
+     */
+    public boolean isFinite(){
+        return Double.isFinite(x) && Double.isFinite(y);
+    }
 }

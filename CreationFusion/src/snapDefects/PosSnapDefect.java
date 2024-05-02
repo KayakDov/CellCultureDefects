@@ -1,6 +1,8 @@
 package snapDefects;
 
 import GeometricTools.Angle;
+import SnapManagement.Defect;
+import SnapManagement.PosDefect;
 
 /**
  * A positive SnapDefect.
@@ -62,6 +64,17 @@ public class PosSnapDefect extends SnapDefect{
         
         dThetadt = ((PosSnapDefect)next).tailAngle.minus(((PosSnapDefect)prev).tailAngle)
                 .mult(1.0/(next.loc.getTime() - prev.loc.getTime()));
+    }
+
+    @Override
+    public PosDefect getDefect() {
+        return (PosDefect)defect;
+    }
+
+    @Override
+    public PosSnapDefect setDefect(Defect defect) {
+        super.setDefect(defect);
+        return this;
     }
         
 }

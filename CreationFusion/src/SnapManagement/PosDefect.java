@@ -89,23 +89,23 @@ public class PosDefect extends Defect {
     }
 
     @Override
-    public PairSnDef snapPairFromEvent(int timeFromEvent, boolean birth) {
+    public PairedSnDef snapPairFromEvent(int timeFromEvent, boolean birth) {
          
         PosSnapDefect snap = snapFromEvent(timeFromEvent, birth);
         NegSnapDefect snapPair = hasPair(birth)?
                 getPair(birth).snapFromEvent(timeFromEvent, birth): null;
         
-        return new PairSnDef(snap, snapPair, isFuseUp(birth), timeFromEvent, birth);
+        return new PairedSnDef(snap, snapPair, isFuseUp(birth), timeFromEvent, birth);
     }
 
     @Override
-    public PairSnDef snapPairFromFrame(int time, boolean birth) {
+    public PairedSnDef snapPairFromFrame(int time, boolean birth) {
         NegSnapDefect partnerSnap
                 = hasPair(birth) && getPair(birth).aliveAt(time)
                 ? getPair(birth).snapFromFrame(time)
                 : null;
 
-        return new PairSnDef(
+        return new PairedSnDef(
                 snapFromFrame(time), 
                 partnerSnap, 
                 isFuseUp(birth), 

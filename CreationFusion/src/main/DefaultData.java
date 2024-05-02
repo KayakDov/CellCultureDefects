@@ -19,10 +19,10 @@ public class DefaultData {
     
     public static DefectManager Cells_1_10_11_12(){
         
-        return new DefectManager("plusMinusTMs//1_10_11_12", cellWindow, cellProximity, cellProximity.rTime*2);
+        return new DefectManager("plusMinusTMs//1_10_11_12", cellWindow, cellProximity, cellProximity.rTime*2).setName("cells_1_10_11_12");
     }
     public static DefectManager Cells_14_15_19(){
-        return new DefectManager("plusMinusTMs//14_15_19", cellWindow, cellProximity, cellProximity.rTime*2);
+        return new DefectManager("plusMinusTMs//14_15_19", cellWindow, cellProximity, cellProximity.rTime*2).setName("cells_14_15_19");
     }
     
     
@@ -36,6 +36,6 @@ public class DefaultData {
                 defaultBacteriaDimensions,
                 defaultProximity, 
                 defaultProximity.rTime*2
-        );
+        ).setName("bacteria");
     }
 }

@@ -18,23 +18,15 @@ import java.util.stream.Collectors;
 public class ChargeTracker {
     
     private DefectManager dm;
-    private String dataName;
     
-    public final float posToNegRatioTotall;
-
     /**
      * Constructs a tool for analysis of system charge over time.
-     * @param dm The name of the experiment.
-     * @param dataName 
+     * @param dm The name of the experiment. 
      */
-    public ChargeTracker(DefectManager dm, String dataName) {
-        this.dm = dm;
-        posToNegRatioTotall = (float) dm.positives().count() / dm.negatives().count();
-        this.dataName = dataName;
-
-        graphChargeOfTime();
-        graphCumulativeCharge();
-        graphRatioOfTime();
+    public ChargeTracker(DefectManager dm) {
+//        graphChargeOfTime();
+//        graphCumulativeCharge();
+//        graphRatioOfTime();
     }
     
     /**
@@ -54,7 +46,7 @@ public class ChargeTracker {
                 "total"
         )
                 ;
-        LineChart.factory("Total Charge " + dataName, "time", "charge", pos, neg, total);
+        LineChart.factory("Total Charge " + dm.getName(), "time", "charge", pos, neg, total);
     }
     
     /**
@@ -64,7 +56,7 @@ public class ChargeTracker {
         NamedData ratioOfTime = new NamedData(
                 dm.timeStream().mapToObj(i -> new Vec(i, dm.posToNegRatio(i))).collect(Collectors.toList()), 
                 "Pos to Neg Charge Ratio as a Function Of Time");
-        LineChart.factory(dataName, "time", "positive/negative ratio", ratioOfTime);
+        LineChart.factory(dm.getName(), "time", "positive/negative ratio", ratioOfTime);
     }
     
     /**
@@ -80,7 +72,8 @@ public class ChargeTracker {
                 "constant ratio projection"
         );
         
-        LineChart.factory("total charge = " + dm.totalCharge() + " For " + dataName, "time", "cumulative charge", ratioOfTime, constRatio);
+        LineChart.factory("total charge = " + dm.totalCharge() + " For " + dm.getName(), "time", "cumulative charge", ratioOfTime, constRatio);
     }
+    
 
 }

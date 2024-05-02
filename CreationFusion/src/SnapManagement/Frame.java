@@ -51,6 +51,13 @@ public class Frame {
     public Stream<PosSnapDefect> positives(){
         return posDefects.values().stream();
     }
+    /**
+     * A stream of the negative defects.
+     * @return A stream of the positive defects.
+     */
+    public Stream<NegSnapDefect> negatives(){
+        return negDefects.values().stream();
+    }
     
     /**
      * Are all the snap defects in this frame taken at the same time.

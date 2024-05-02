@@ -1,17 +1,13 @@
 package SnapManagement;
 
 import GeometricTools.Angle;
-import SnapManagement.PairSnDef;
 import dataTools.UnimodalArrayMax;
 import defectManagement.DefectManager;
 import snapDefects.SpaceTemp;
 import defectManagement.hasChargeID;
-import snapDefects.PosSnapDefect;
-import snapDefects.NegSnapDefect;
 import snapDefects.SnapDefect;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -24,6 +20,7 @@ public abstract class Defect implements hasChargeID {
     public int ID;
     protected SnapDefect[] lifeCourse;
     private Defect twin, spouse;
+    private boolean eligibleForSpouse, eligibleForTwin;
 
     /**
      * Constructs a new Defect instance from a SnapDefect.
@@ -273,7 +270,7 @@ public abstract class Defect implements hasChargeID {
      * defect.
      * @return
      */
-    public abstract PairSnDef snapPairFromEvent(int timeFromEvent, boolean birth);
+    public abstract PairedSnDef snapPairFromEvent(int timeFromEvent, boolean birth);
 
     /**
      * Gets the partners snap defect at the desired time.
@@ -283,7 +280,7 @@ public abstract class Defect implements hasChargeID {
      * @return The snap defect of the partner at the requested time. If no
      * defect is available, then a null value is returned.
      */
-    public abstract PairSnDef snapPairFromFrame(int time, boolean birth);
+    public abstract PairedSnDef snapPairFromFrame(int time, boolean birth);
 
     /**
      * A stream of this defects snapsDefects together with their birth or death
@@ -293,7 +290,7 @@ public abstract class Defect implements hasChargeID {
      * @return A stream of this defects snapsDefects together with their birth
      * or death pairs.
      */
-    public Stream<PairSnDef> defectPairs(boolean birth) {
+    public Stream<PairedSnDef> defectPairs(boolean birth) {
         return defectPairs(birth, Integer.MAX_VALUE, false);
     }
 
@@ -339,7 +336,7 @@ public abstract class Defect implements hasChargeID {
      * @return A stream of this defects snapsDefects together with their birth
      * or death pairs.
      */
-    public Stream<PairSnDef> defectPairs(boolean birth, int maxNumPairs, boolean peakDistStop) {
+    public Stream<PairedSnDef> defectPairs(boolean birth, int maxNumPairs, boolean peakDistStop) {
         
         LifeCourseRange lcr = new LifeCourseRange(birth, maxNumPairs, peakDistStop);
         
@@ -423,7 +420,7 @@ public abstract class Defect implements hasChargeID {
      * @param time The amount of time from birth.
      * @return The snap defect pair at the given time from birth.
      */
-    private PairSnDef pairFromBirth(int time){
+    private PairedSnDef pairFromBirth(int time){
         return snapPairFromEvent(time, DefectManager.BIRTH);
     }
     
@@ -480,5 +477,24 @@ public abstract class Defect implements hasChargeID {
      */
     public boolean isTrackingLifeCourse(){
         return lifeCourse != null;
+    }
+
+    /**
+     * Is this defect eligible to be paired.
+     * @param birth True for twin, false for spouse.
+     * @return Is this defect eligible fora pairing.
+     */
+    public boolean isEligable(boolean birth) {
+        return birth? eligibleForTwin:eligibleForSpouse;
+    }
+
+    /**
+     * Is this defect eligible for a pair.
+     * @param birth True for twin,false for spouse.
+     * @param eligibility True if yes, false if no.
+     */
+    public void setEligable(boolean birth, boolean eligibility) {
+        if(birth) eligibleForTwin = eligibility;
+        else eligibleForSpouse = eligibility;
     }
 }
