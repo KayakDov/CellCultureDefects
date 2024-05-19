@@ -1,24 +1,18 @@
 package main;
 
 import Annalysis.BirthAndDeathTracker;
-import Annalysis.ChargeTracker;
 import Charts.HeatMap;
-import Charts.LineChart;
 import Charts.NamedData;
 import Charts.ScatterPlot;
 import snapDefects.SpaceTemp;
 import GeometricTools.Rectangle;
 import GeometricTools.OpenSpaceTimeBall;
-import GeometricTools.Vec;
 import ReadWrite.DefaultWriter;
 import ReadWrite.ReadManager;
 import defectManagement.DefectManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  *
@@ -184,7 +178,8 @@ public class Main {
 
                 BirthAndDeathTracker ct = new BirthAndDeathTracker(dm);
 
-//                ct.angleNearFusion(DefectManager.DEATH, 30);
+//                ct.angleNearFusion(DefectManager.BIRTH, 20);
+//                ct.distanceOfFrame(60, 5);
                 
                 dm.writePairesToFile(new DefaultWriter("Bacteria_pairs.csv"));
 //            }

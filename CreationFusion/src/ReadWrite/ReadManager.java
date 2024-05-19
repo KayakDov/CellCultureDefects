@@ -108,7 +108,25 @@ public class ReadManager {
             throw new RuntimeException(ex);
         }
     }
-
+    
+    /**
+     * The number of frames in the file.
+     * @return The number of frames in the file.
+     */
+    public int numFrames(){
+        try {
+            Reader reader = getReader();
+            int numFrames = 0;
+            String nextLine;
+            while((nextLine = reader.readLine()) != null)
+                numFrames = time(nextLine);
+            return numFrames;
+        } catch (IOException ex) {
+            Logger.getLogger(ReadManager.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
+        }
+    }
+    
     /**
      * Gets a file reader for a file with this default arangement.
      *

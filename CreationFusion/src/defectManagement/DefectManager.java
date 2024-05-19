@@ -12,7 +12,9 @@ import ReadWrite.ReadManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.IntToDoubleFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -25,8 +27,7 @@ import snapDefects.PosSnapDefect;
  */
 public class DefectManager {
 
-    private final List<PosSnapDefect> posSnaps;
-    private final List<NegSnapDefect> negSnaps;
+    private Frame[] frames;
     private final PosDefectSet posDefects;
     private final NegDefectSet negDefects;
     private long numEligibleForSpouse, numEligableForTwin, numEligableForSpouseAndTwin;
@@ -35,7 +36,8 @@ public class DefectManager {
     public final static boolean POS = true, NEG = false, BIRTH = true, DEATH = false;
 
     /**
-     * merges another defect manager into this one.
+     * merges another defect manager into this one. The defect manager being
+     * merged in is not left in tack.
      *
      * @param other The other defect manager.
      */
@@ -53,13 +55,27 @@ public class DefectManager {
 
         posDefects.mergeIn(other.posDefects);
         negDefects.mergeIn(other.negDefects);
-        
-        posSnaps.addAll(other.posSnaps);
-        negSnaps.addAll(other.negSnaps);
-        
+
+        mergeFramesIn(other.frames);
+
         numEligableForSpouseAndTwin += other.numEligableForSpouseAndTwin;
         numEligableForTwin += other.numEligableForTwin;
         numEligibleForSpouse += other.numEligibleForSpouse;
+    }
+
+    /**
+     * merges the frames from another defect manager into this one.
+     *
+     * @param other The defect manager to be merged into this one.
+     */
+    private void mergeFramesIn(Frame[] other) {
+        Frame[] merged = new Frame[Math.max(frames.length, other.length)];
+        Arrays.setAll(merged, i -> {
+            if (i > frames.length) return other[i];
+            if (i > other.length) return frames[i];
+            return Frame.merge(other[i], frames[i]);
+        });
+        frames = merged;
     }
 
     /**
@@ -71,9 +87,10 @@ public class DefectManager {
         return Collections.unmodifiableList(baseExperiments);
     }
 
+    /**
+     * A constructor that creates an empty defect manager.
+     */
     private DefectManager() {
-        this.posSnaps = new ArrayList<>();
-        this.negSnaps = new ArrayList<>();
         this.posDefects = new PosDefectSet(0);
         this.negDefects = new NegDefectSet(0);
         numEligibleForSpouse = numEligableForTwin = numEligableForSpouseAndTwin = 0;
@@ -83,8 +100,7 @@ public class DefectManager {
      * For copy construction.
      */
     private DefectManager(DefectManager toCopy) {
-        this.posSnaps = toCopy.posSnaps;
-        this.negSnaps = toCopy.negSnaps;
+        this.frames = toCopy.frames;
         this.posDefects = toCopy.posDefects;
         this.negDefects = toCopy.negDefects;
         this.numEligibleForSpouse = toCopy.numEligibleForSpouse;
@@ -96,38 +112,89 @@ public class DefectManager {
     /**
      * Constructs a DefectManager with the specified file name.
      *
-     * @param fileFormat The format of the file.
+     * @param readManager The format of the file.
      * @param window A window, outside of which no defects are tracked.
      * @param ball defects must have their creation or annihilation events
      * closer than this threshold to be considered a pair.
      * @param timeToEdge The time an event must be from the beginning or end of
      * time.
      */
-    public DefectManager(ReadManager fileFormat, Rectangle window, OpenSpaceTimeBall ball, int timeToEdge) {
+    public DefectManager(ReadManager readManager, Rectangle window, OpenSpaceTimeBall ball, int timeToEdge) {
 
-        int numLines = (int) fileFormat.lines().parallel().count();
+        setFrames(readManager);
 
-        List<PosSnapDefect> posTempSnaps = new ArrayList<>(numLines);
-        List<NegSnapDefect> negTempSnaps = new ArrayList<>(numLines);
-
-        Map<Boolean, Integer> maxID = loadSnaps(fileFormat, window, posTempSnaps, negTempSnaps);
-
-        posSnaps = Collections.unmodifiableList(posTempSnaps);
-        negSnaps = Collections.unmodifiableList(negTempSnaps);
-
-        this.posDefects = new PosDefectSet(maxID.get(POS) + 1);
-        this.negDefects = new NegDefectSet(maxID.get(NEG) + 1);
+        posDefects = new PosDefectSet(maxID(POS) + 1);
+        negDefects = new NegDefectSet(maxID(NEG) + 1);
 
         loadDefects();
 
-        Stream.of(BIRTH, DEATH).parallel().forEach(birth -> 
-                all().forEach(def -> def.setEligable(birth, !nearEdge(def, window, timeToEdge, birth)))
-        );
+        Stream.of(BIRTH, DEATH).parallel().forEach(event -> {
+            all().forEach(def -> def.setEligable(event, !nearEdge(def, window, timeToEdge, event)));
+            pairDefects(window, ball, timeToEdge, event);
+        });
 
-        Stream.of(BIRTH, DEATH).parallel().forEach(event -> pairDefects(window, ball, timeToEdge, event));
+        setFuseUp(Integer.MAX_VALUE);
 
-        loadLifeCourses();
-    
+    }
+
+    /**
+     * Gets the maximum ID of the given charge.
+     *
+     * @param charge The charge of the mdesired maximum ID.
+     * @return The maximum ID of the given charge.
+     */
+    private int maxID(boolean charge) {
+        return snaps(charge).mapToInt(snap -> snap.getID()).max().getAsInt();
+    }
+
+    public Stream<? extends SnapDefect> snaps(boolean charge) {
+        return charge ? posSnaps() : negSnaps();
+    }
+
+    /**
+     * Gets all the frames from the file.
+     *
+     * @return All the frames from the file.
+     */
+    private void setFrames(ReadManager rm) {
+
+        Frame.FileData frameData = new Frame.FileData(rm);
+
+        frames = new Frame[frameData.numFrames + 1];
+
+        Map<Integer, PosSnapDefect>[] posMaps = new Map[frameData.numFrames + 1];
+        Map<Integer, NegSnapDefect>[] negMaps = new Map[frameData.numFrames + 1];
+
+        Arrays.setAll(posMaps, i -> new ConcurrentHashMap<Integer, PosSnapDefect>(frameData.maxFrameSize));
+        Arrays.setAll(negMaps, i -> new ConcurrentHashMap<Integer, NegSnapDefect>(frameData.maxFrameSize));
+
+        rm.snapDefects().parallel().filter(snap -> snap.isTracked()).forEach(snap -> {
+            if (snap.getCharge())
+                posMaps[snap.getTime()].put(snap.getID(), (PosSnapDefect) snap);
+            else
+                negMaps[snap.getTime()].put(snap.getID(), (NegSnapDefect) snap);
+        });
+
+        Arrays.setAll(frames, i -> new Frame(posMaps[i], negMaps[i], i));
+
+    }
+
+    /**
+     * All the positive snap defects.
+     *
+     * @return All the positive snap defects.
+     */
+    public Stream<PosSnapDefect> posSnaps() {
+        return Arrays.stream(frames).flatMap(frame -> frame.positives());
+    }
+
+    /**
+     * All the negative snap defects.
+     *
+     * @return All the negative snap defects.
+     */
+    public Stream<NegSnapDefect> negSnaps() {
+        return Arrays.stream(frames).flatMap(frame -> frame.negatives());
     }
 
     /**
@@ -143,37 +210,6 @@ public class DefectManager {
                         -> window.contains(pos.get(birth))
                 && !nearEdge(pos, window, timeToEdge, birth));
 
-    }
-    
-    /**
-     * Loads the snap defects into the proffered lists.
-     *
-     * @param fileFormat The file to be read from.
-     * @param posTempSnaps The list to have the positive snap defects read into.
-     * @param negTempSnaps The list to have the negative snap defects read into.
-     * @param window Only snap defects in this window are to be considered.
-     * @return The maximum ID in the positive and negative snap defects.
-     */
-    private Map<Boolean, Integer> loadSnaps(ReadManager fileFormat, Rectangle window, List<PosSnapDefect> posTempSnaps, List<NegSnapDefect> negTempSnaps) {
-        Map<Boolean, Integer> maxID = new HashMap<>(2);
-        maxID.put(POS, 0);
-        maxID.put(NEG, 0);
-
-        fileFormat.snapDefects()
-                .filter(snap -> window == null || window.contains(snap.loc))
-                .filter(snap -> snap.isTracked())
-                .forEachOrdered(snap -> {
-                    
-                    boolean charge = snap.getCharge();
-                    
-                    if (charge) posTempSnaps.add((PosSnapDefect) snap);
-
-                    else negTempSnaps.add((NegSnapDefect) snap);
-
-                    maxID.put(charge, Math.max(maxID.get(charge), snap.getID()));
-                });
-        
-        return maxID;
     }
 
     /**
@@ -256,7 +292,7 @@ public class DefectManager {
         HashSet<Integer> defects = new HashSet<>(size());
         ArrayList<Integer> orderOfAppearence = new ArrayList<>(defects(charge).size());
 
-        negSnaps.forEach(sd -> {
+        negSnaps().forEach(sd -> {
             if (sd.isTracked() && !defects.contains(sd.getID())) {
                 defects.add(sd.getID());
                 orderOfAppearence.add(sd.getID());
@@ -296,8 +332,8 @@ public class DefectManager {
      * @param charge The charge of the desired list.
      * @return The list of snap defects with the desired charge.
      */
-    public List<? extends SnapDefect> getSnapDefects(boolean charge) {
-        return charge ? posSnaps : negSnaps;
+    public Stream<? extends SnapDefect> getSnapDefects(boolean charge) {
+        return charge ? posSnaps() : negSnaps();
     }
 
     /**
@@ -307,10 +343,12 @@ public class DefectManager {
      *
      */
     public final void loadDefects() {
-        Stream.of(POS, NEG).parallel().forEach(charge
-                -> getSnapDefects(charge).stream().parallel().forEach(sd -> defects(charge).add(sd)
+        Stream.of(POS, NEG).parallel()
+                .forEach(charge
+                        -> getSnapDefects(charge).parallel().forEach(sd -> defects(charge).add(sd)
                 )
-        );
+                );
+        all().parallel().forEach(def -> def.setVelocities());
     }
 
     /**
@@ -329,7 +367,7 @@ public class DefectManager {
         SpaceTemp spaceTemp = def.get(birth);
         return window.nearEdge(spaceTemp)
                 || spaceTemp.getTime() < timeToEdge
-                || spaceTemp.getTime() > getEndTime() - timeToEdge;
+                || spaceTemp.getTime() > frames.length - timeToEdge;
     }
 
     /**
@@ -343,32 +381,12 @@ public class DefectManager {
     public final void pairDefects(Rectangle window, OpenSpaceTimeBall ball, int timeToEdge, boolean birth) {
         clearPairing(birth);
 
-        Set<NegDefect> possiblePairs = negDefects.stream().filter(neg -> neg.isEligable(birth)).collect(Collectors.toSet());
-
         positives().filter(pos -> pos.isEligable(birth)).forEach(lonelyPos
                 -> lonelyPos.setPair(
-                        getPair(lonelyPos, possiblePairs, window, ball, timeToEdge, birth),
+                        getPair(lonelyPos, window, ball, timeToEdge, birth),
                         birth
                 )
         );
-    }
-
-    private int endTime = -1;
-
-    /**
-     * The total amount of time in the file.
-     *
-     * @return The total amount of time in the file.
-     */
-    public int getEndTime() {
-        if (endTime == -1)
-            if (posDefects.isEmpty())
-                return endTime = negSnaps.stream().mapToInt(snap -> snap.loc.getTime()).max().getAsInt();
-            else
-                return endTime = all()
-                        .mapToInt(def -> def.getDeath().getTime()).max().getAsInt();
-
-        return endTime;
     }
 
     /**
@@ -456,24 +474,38 @@ public class DefectManager {
     }
 
     /**
+     * If this is a defects birthday, that defect is returned.  Otherwise, null
+     * is returned.
+     * @param sd The potential birthday.
+     * @return The defect for whom sd is a birthday, or null.
+     */
+    private NegDefect eventDayOf(NegSnapDefect sd, boolean isBirth){
+        NegDefect def = negDefects.get(sd);
+        return def.get(isBirth).getTime() == sd.getTime()? def: null;
+    }
+    
+    /**
      * Finds the pare for the proffered defect.
      *
      * @param lonely The positive defect for whom a pair is desired.
-     * @param eligibles A set of unmatched negative defects.
      * @param window Only interested in pairs inside window.
      * @param ball A definition of closeness.
      * @param timeToEdge Must be further away from the edge.
      * @param isBirth True if a twin is sought, false for a spouse.
      * @return The nearest pair if one exists within the given proximity.
      */
-    public NegDefect getPair(PosDefect lonely, Set<NegDefect> eligibles, Rectangle window, OpenSpaceTimeBall ball, int timeToEdge, final boolean isBirth) {
-        NegDefect closest = eligibles.stream()
+    public NegDefect getPair(PosDefect lonely, Rectangle window, OpenSpaceTimeBall ball, int timeToEdge, final boolean isBirth) {
+        int centTime = lonely.get(isBirth).getTime();
+        NegDefect closest = IntStream.range(
+                Math.max(centTime - ball.rTime, 0), 
+                Math.min(centTime + ball.rTime + 1, frames.length)
+        ).boxed().flatMap(i -> frames[i].negatives())
+                .map(snap -> eventDayOf(snap, isBirth))
+                .filter(def -> def != null && !def.hasPair(isBirth))
                 .parallel()
                 .filter(eligable -> ball.near(eligable.get(isBirth), lonely.get(isBirth)))
                 .min(Comparator.comparing(eligable -> eligable.get(isBirth).dist(lonely.get(isBirth))))
                 .orElse(null);
-
-        if (closest != null) eligibles.remove(closest);
 
         return closest;
     }
@@ -555,11 +587,9 @@ public class DefectManager {
      */
     public List<Vec> cumulativeSystemCharge() {
 
-        int n = (int) getEndTime() + 1;
+        int n = (int) frames.length + 1;
 
         List<Vec> cumeCharge = new ArrayList<>(n);
-
-        Frame[] frames = frames();
 
         cumeCharge.add(new Vec(0, frames[0].charge()));
 
@@ -577,21 +607,6 @@ public class DefectManager {
      */
     public Defect getDefect(SnapDefect sd) {
         return defects(sd.getCharge()).get(sd);
-    }
-
-    /**
-     * Loads the life courses of each defect.
-     */
-    public final void loadLifeCourses() {
-
-        all().parallel().forEach(def -> def.prepForTracking());
-
-        loadDefects();
-
-        all().parallel().forEach(def -> def.setVelocities());
-
-        setFuseUp(Integer.MAX_VALUE);
-
     }
 
     /**
@@ -632,7 +647,7 @@ public class DefectManager {
      *
      * @param timePeriod Over how long from the event is the average taken.
      */
-    public void setFuseUp(int timePeriod) {
+    public final void setFuseUp(int timePeriod) {
         positives().parallel().forEach(def -> def.setFuseUp(timePeriod));
     }
 
@@ -655,7 +670,7 @@ public class DefectManager {
      * @param birth True for creation pairs, false for annihilation pairs.
      * @param name The name of the data set.
      * @param numPairs The number of SnapDefectPairs created from each positive
-     * defect. This is roughly the number of frames desired.
+     * defect. This is roughly the number of setFrames desired.
      * @return Data points generated from all the pairs.
      */
     public NamedData getNamedData(Function<PairedSnDef, Double> x, Function<PairedSnDef, Double> y, boolean birth, String name, int numPairs) {
@@ -708,21 +723,21 @@ public class DefectManager {
                     ball,
                     timeToEdge
             );
-            
-            if(dm.all().anyMatch(def -> !def.isTrackingLifeCourse()))
+
+            if (dm.all().anyMatch(def -> !def.isTrackingLifeCourse()))
                 throw new RuntimeException("Someone is not tracking their life course.");
-            
+
             mergeIn(dm);
         }
     }
 
     /**
-     * A stream of frames.
+     * A stream of setFrames.
      *
-     * @return A stream of frames.
+     * @return A stream of setFrames.
      */
     public IntStream timeStream() {
-        return IntStream.range(0, (int) getEndTime() + 1);
+        return IntStream.range(0, frames.length);
     }
 
     /**
@@ -734,53 +749,24 @@ public class DefectManager {
     public List<Vec> ofTime(IntToDoubleFunction f) {
         return timeStream().mapToObj(i -> new Vec(i, f.applyAsDouble(i))).collect(Collectors.toList());
     }
-    
+
     /**
-     * Returns a bunch of data points, with x values the distance between the 
+     * Returns a bunch of data points, with x values the distance between the
      * paired defects and y values f(pair)
+     *
      * @param f
      * @param isBirth True for twins, false for spouses.
-     * @param maxDist The maximum distance the two defects can have from one another.
-     * @return Returns a bunch of data points, with x values the distance between the 
-     * paired defects and y values f(pair)
+     * @param maxDist The maximum distance the two defects can have from one
+     * another.
+     * @return Returns a bunch of data points, with x values the distance
+     * between the paired defects and y values f(pair)
      */
-    public List<Vec> pairsAtDistance(Function<PairedSnDef, Double> f, boolean isBirth, double maxDist){
-        return  pairedPos(isBirth)
+    public List<Vec> pairsAtDistance(Function<PairedSnDef, Double> f, boolean isBirth, double maxDist) {
+        return pairedPos(isBirth)
                 .flatMap(posDef -> posDef.defectPairs(isBirth))
                 .filter(pair -> pair.dist() < maxDist)
                 .map(pair -> new Vec(pair.dist(), f.apply(pair)))
                 .collect(Collectors.toList());
-    }
-    
-    
-    
-
-    /**
-     * All of the frames.
-     *
-     * @return All of the frames.
-     */
-    public Frame[] frames() {
-
-        int n = (int) getEndTime() + 1;
-
-        HashMap<Integer, PosSnapDefect>[] posPreFrame = new HashMap[n];
-        HashMap<Integer, NegSnapDefect>[] negPreFrame = new HashMap[n];
-
-        Stream.of(POS, NEG).forEach(charge -> {
-            if (charge)
-                Arrays.setAll(posPreFrame, j -> new HashMap<>(2 * posSnaps.size() / n));
-            else
-                Arrays.setAll(negPreFrame, j -> new HashMap<>(2 * negSnaps.size() / n));
-        });
-
-        Frame[] frames = new Frame[(int) getEndTime() + 1];
-        Arrays.setAll(frames, i -> new Frame(posPreFrame[i], negPreFrame[i], i));
-
-        posSnaps.forEach(pos -> posPreFrame[pos.getTime()].put(pos.getID(), pos));
-        negSnaps.forEach(neg -> negPreFrame[neg.getTime()].put(neg.getID(), neg));
-
-        return frames;
     }
 
     /**
@@ -788,43 +774,46 @@ public class DefectManager {
      *
      * @return The charge of all the file lines added up.
      */
-    public int totalCharge() {
-        return posSnaps.size() - negSnaps.size();
+    public long totalCharge() {
+        return posSnaps().count() - negSnaps().count();
     }
-    
+
     private String name = "";
 
     /**
      * Gets the name of this defect manager.
+     *
      * @return The name of this defect manager.
      */
     public String getName() {
         return name;
     }
 
-    /** 
+    /**
      * Sets the name of this defect manager.
+     *
      * @param name The name of this defect manager.
      */
     public DefectManager setName(String name) {
         this.name = name;
         return this;
     }
-    
+
     /**
-     * A stream of all the pairs of defects that nearly collide.  Note, these may
+     * A stream of all the pairs of defects that nearly collide. Note, these may
      * or may not be fusion or creation pairs.
+     *
      * @param near A definition of proximity
-     * @return A stream of all the pairs of defects that nearly collide.  Note, these may
-     * or may not be fusion or creation pairs.
+     * @return A stream of all the pairs of defects that nearly collide. Note,
+     * these may or may not be fusion or creation pairs.
      */
-    public Stream<PairSnDef> nearCollsionsSnPairs(double near){
-        
-        return Arrays.stream(frames()).flatMap(frame -> 
-                frame.positives().flatMap(pos -> 
-                        frame.negatives().filter(neg -> neg.loc.dist(pos.loc) < near)
-                                .map(neg -> new PairSnDef(pos, neg)))
+    public Stream<PairSnDef> nearCollsionsSnPairs(double near) {
+
+        return Arrays.stream(frames).flatMap(frame
+                -> frame.positives().flatMap(pos
+                        -> frame.negatives().filter(neg -> neg.loc.dist(pos.loc) < near)
+                        .map(neg -> new PairSnDef(pos, neg)))
         );
     }
-        
+
 }

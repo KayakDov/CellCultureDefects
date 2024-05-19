@@ -56,7 +56,7 @@ public class NegDefect extends Defect {
      * @param sd The snap defect to be added.
      */
     public void addLifeSnap(NegSnapDefect sd) {
-        super.addLifeSnap(sd);
+        super.addSnap(sd);
     }
 
         
@@ -75,11 +75,6 @@ public class NegDefect extends Defect {
     @Override
     public NegSnapDefect snapFromFrame(int time) {
         return (NegSnapDefect) super.snapFromFrame(time);
-    }
-
-    @Override
-    public void prepForTracking() {
-        lifeCourse = new NegSnapDefect[age() + 1];
     }
 
     @Override

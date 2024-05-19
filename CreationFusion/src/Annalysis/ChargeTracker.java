@@ -58,22 +58,6 @@ public class ChargeTracker {
                 "Pos to Neg Charge Ratio as a Function Of Time");
         LineChart.factory(dm.getName(), "time", "positive/negative ratio", ratioOfTime);
     }
-    
-    /**
-     * Graphs the cumulative charge.
-     */
-    public void graphCumulativeCharge(){
-        NamedData ratioOfTime = new NamedData(
-                dm.cumulativeSystemCharge(), 
-                "Pos to Neg Charge Ratio as a Function Of Time");
         
-        NamedData constRatio = new NamedData(
-                new ArrayList<>(List.of(new Vec(0,0), new Vec(dm.getEndTime(),dm.totalCharge()))), 
-                "constant ratio projection"
-        );
-        
-        LineChart.factory("total charge = " + dm.totalCharge() + " For " + dm.getName(), "time", "cumulative charge", ratioOfTime, constRatio);
-    }
-    
 
 }

@@ -49,13 +49,13 @@ public class BirthAndDeathTracker {
                 Double.NaN,
                 360
         );
-//        
-//        Histogram.factory(
-//                pairs.stream().mapToDouble(vec -> vec.getY()).toArray(), 
-//                50, 
-//                dm.getName() + ": angle between pos tail and conecting line", 
-//                "angle"
-//        );
+        
+        Histogram.factory(
+                pairs.stream().mapToDouble(vec -> vec.getY()).toArray(), 
+                50, 
+                dm.getName() + ": angle between pos tail and conecting line", 
+                "angle"
+        );
     }
 
     /**

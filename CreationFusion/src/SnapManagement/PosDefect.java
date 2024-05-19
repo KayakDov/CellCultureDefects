@@ -3,6 +3,7 @@ package SnapManagement;
 import GeometricTools.Angle;
 import defectManagement.DefectManager;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import snapDefects.NegSnapDefect;
 import snapDefects.PosSnapDefect;
@@ -70,17 +71,12 @@ public class PosDefect extends Defect {
      * @param sd The snap defect to be added.
      */
     public void addLifeSnap(PosSnapDefect sd) {
-        super.addLifeSnap(sd);
+        super.addSnap(sd);
     }
 
     @Override
     public PosSnapDefect snapFromFrame(int time) {
         return (PosSnapDefect)super.snapFromFrame(time); 
-    }
-
-    @Override
-    public void prepForTracking() {
-        lifeCourse = new PosSnapDefect[age() + 1];
     }
 
     @Override
@@ -149,11 +145,5 @@ public class PosDefect extends Defect {
     public boolean isFuseUp(boolean birth) {
         return birth?fuseUpTwin:fuseUpSpouse;
     }
-
-    @Override
-    public List<PosSnapDefect> getLifeCourse() {
-        return Arrays.asList((PosSnapDefect[])lifeCourse);
-    }
-
     
 }
