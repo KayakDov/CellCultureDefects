@@ -52,7 +52,7 @@ public class DefaultWriter extends FormatedFileWriter {
      * @param idBegin The prefix for the id.
      * @return This writer.
      */
-    public DefaultWriter setIdBegin(String idBegin) {
+    public DefaultWriter setIdPrefix(String idBegin) {
         
         Arrays.stream(cols)
                 .filter(col -> col instanceof IDCol)

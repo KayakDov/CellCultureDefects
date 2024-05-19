@@ -2,7 +2,7 @@ package defectManagement;
 
 import Charts.NamedData;
 import GeometricTools.Rectangle;
-import GeometricTools.SpaceTimeBall;
+import GeometricTools.OpenSpaceTimeBall;
 import GeometricTools.Vec;
 import ReadWrite.FormatedFileWriter;
 import snapDefects.SpaceTemp;
@@ -103,7 +103,7 @@ public class DefectManager {
      * @param timeToEdge The time an event must be from the beginning or end of
      * time.
      */
-    public DefectManager(ReadManager fileFormat, Rectangle window, SpaceTimeBall ball, int timeToEdge) {
+    public DefectManager(ReadManager fileFormat, Rectangle window, OpenSpaceTimeBall ball, int timeToEdge) {
 
         int numLines = (int) fileFormat.lines().parallel().count();
 
@@ -340,14 +340,14 @@ public class DefectManager {
      * @param timeToEdge The amount of time that is considered near the edge.
      * @param birth Set true to pair births and false to pair annihilations.
      */
-    public final void pairDefects(Rectangle window, SpaceTimeBall ball, int timeToEdge, boolean birth) {
+    public final void pairDefects(Rectangle window, OpenSpaceTimeBall ball, int timeToEdge, boolean birth) {
         clearPairing(birth);
 
         Set<NegDefect> possiblePairs = negDefects.stream().filter(neg -> neg.isEligable(birth)).collect(Collectors.toSet());
 
-        positives().filter(pos -> pos.isEligable(birth)).forEach(lonely
-                -> lonely.setPair(
-                        getPair(lonely, possiblePairs, window, ball, timeToEdge, birth),
+        positives().filter(pos -> pos.isEligable(birth)).forEach(lonelyPos
+                -> lonelyPos.setPair(
+                        getPair(lonelyPos, possiblePairs, window, ball, timeToEdge, birth),
                         birth
                 )
         );
@@ -425,24 +425,24 @@ public class DefectManager {
     /**
      * Positive defects that have a pair.
      *
-     * @param birth true for twin, false for spouse.
+     * @param isBirth true for twin, false for spouse.
      * @return Positive defects that have a pair.
      */
-    public Stream<PosDefect> pairedPos(boolean birth) {
-        return positives().filter(def -> def.hasPair(birth));
+    public Stream<PosDefect> pairedPos(boolean isBirth) {
+        return positives().filter(def -> def.hasPair(isBirth));
     }
 
     /**
      * All the pairs for all the defects.
      *
-     * @param birth true if creation pairs are desired, false for annihilation
+     * @param isBirth true if creation pairs are desired, false for annihilation
      * pairs.
      * @return All the pairs for all the defects.
      */
-    public Stream<PairedSnDef> pairs(boolean birth) {
+    public Stream<PairedSnDef> pairs(boolean isBirth) {
         return positives()
-                .filter(posDef -> posDef.hasPair(birth))
-                .flatMap(posDef -> posDef.defectPairs(birth))
+                .filter(posDef -> posDef.hasPair(isBirth))
+                .flatMap(posDef -> posDef.defectPairs(isBirth))
                 .filter(pair -> pair.workingPair());
     }
 
@@ -463,14 +463,14 @@ public class DefectManager {
      * @param window Only interested in pairs inside window.
      * @param ball A definition of closeness.
      * @param timeToEdge Must be further away from the edge.
-     * @param birth True if a twin is sought, false for a spouse.
+     * @param isBirth True if a twin is sought, false for a spouse.
      * @return The nearest pair if one exists within the given proximity.
      */
-    public NegDefect getPair(PosDefect lonely, Set<NegDefect> eligibles, Rectangle window, SpaceTimeBall ball, int timeToEdge, final boolean birth) {
+    public NegDefect getPair(PosDefect lonely, Set<NegDefect> eligibles, Rectangle window, OpenSpaceTimeBall ball, int timeToEdge, final boolean isBirth) {
         NegDefect closest = eligibles.stream()
                 .parallel()
-                .filter(eligable -> ball.near(eligable.get(birth), lonely.get(birth)))
-                .min(Comparator.comparing(eligable -> eligable.get(birth).dist(lonely.get(birth))))
+                .filter(eligable -> ball.near(eligable.get(isBirth), lonely.get(isBirth)))
+                .min(Comparator.comparing(eligable -> eligable.get(isBirth).dist(lonely.get(isBirth))))
                 .orElse(null);
 
         if (closest != null) eligibles.remove(closest);
@@ -697,7 +697,7 @@ public class DefectManager {
      * @param ball A definition of proximity.
      * @param timeToEdge Proximity to the end and beginning of time.
      */
-    public DefectManager(String parentFolder, Rectangle rect, SpaceTimeBall ball, int timeToEdge) {
+    public DefectManager(String parentFolder, Rectangle rect, OpenSpaceTimeBall ball, int timeToEdge) {
         this();
         String[] files = Arrays.stream(new File(parentFolder).list()).map(str -> parentFolder + "//" + str).toArray(String[]::new);
 
@@ -739,13 +739,14 @@ public class DefectManager {
      * Returns a bunch of data points, with x values the distance between the 
      * paired defects and y values f(pair)
      * @param f
-     * @param birth True for twins, false for spouses.
+     * @param isBirth True for twins, false for spouses.
+     * @param maxDist The maximum distance the two defects can have from one another.
      * @return Returns a bunch of data points, with x values the distance between the 
      * paired defects and y values f(pair)
      */
-    public List<Vec> pairsAtDistance(Function<PairedSnDef, Double> f, boolean birth, double maxDist){
-        return  pairedPos(birth)
-                .flatMap(posDef -> posDef.defectPairs(birth))
+    public List<Vec> pairsAtDistance(Function<PairedSnDef, Double> f, boolean isBirth, double maxDist){
+        return  pairedPos(isBirth)
+                .flatMap(posDef -> posDef.defectPairs(isBirth))
                 .filter(pair -> pair.dist() < maxDist)
                 .map(pair -> new Vec(pair.dist(), f.apply(pair)))
                 .collect(Collectors.toList());
@@ -825,5 +826,5 @@ public class DefectManager {
                                 .map(neg -> new PairSnDef(pos, neg)))
         );
     }
-    
+        
 }

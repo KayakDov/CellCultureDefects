@@ -8,7 +8,7 @@ import Charts.NamedData;
 import Charts.ScatterPlot;
 import snapDefects.SpaceTemp;
 import GeometricTools.Rectangle;
-import GeometricTools.SpaceTimeBall;
+import GeometricTools.OpenSpaceTimeBall;
 import GeometricTools.Vec;
 import ReadWrite.DefaultWriter;
 import ReadWrite.ReadManager;
@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 
 /**
  *
@@ -103,28 +102,28 @@ public class Main {
         DefectManager dm = DefaultData.bacteria();
 
         System.out.println(dm.pairs(DefectManager.DEATH).count());
-        
+
         NamedData mpPhaseOfMpAngle = dm.getNamedData(
-                p -> p.mpPhase(), 
-                p -> p.mpAngle().deg(),                 
-                DefectManager.DEATH, 
-                "", 
+                p -> p.mpPhase(),
+                p -> p.mpAngle().deg(),
+                DefectManager.DEATH,
+                "",
                 15
         );
-        
+
         HeatMap.factory(
-                "Bacteria", 
-                "mpAngle", 
-                "mpPhase", 
-                mpPhaseOfMpAngle.data, 
-                900, 
-                .5, 
-                2*Math.PI/3,
-                2*Math.PI
-                );
-        
+                "Bacteria",
+                "mpAngle",
+                "mpPhase",
+                mpPhaseOfMpAngle.data,
+                900,
+                .5,
+                2 * Math.PI / 3,
+                2 * Math.PI
+        );
+
         ScatterPlot.factory("Bacteria", "mpPhase", "mpAngle", mpPhaseOfMpAngle);
-        
+
     }
 
     /**
@@ -163,11 +162,10 @@ public class Main {
             DefectManager dm = new DefectManager(
                     ReadManager.defaultFileFormat(fileName),
                     getWindow(args),
-                    new SpaceTimeBall(timeThreshold(args), distThreshold(args)),                    
+                    new OpenSpaceTimeBall(timeThreshold(args), distThreshold(args)),
                     timeEdge(args)
-                    
             );
-            writer.setIdBegin(fileName.replaceAll("[^0-9]", "") + ".");//Sets the ID prefix to be the numbers in the file name.
+            writer.setIdPrefix(fileName.replaceAll("[^0-9]", "") + ".");//Sets the ID prefix to be the numbers in the file name.
             dm.writePairesToFile(writer);
         }
 
@@ -179,13 +177,18 @@ public class Main {
      */
     public static void cellExperiments() throws IOException {
 
-        DefectManager dm = DefaultData.bacteria();
-                        
-        BirthAndDeathTracker ct = new BirthAndDeathTracker(dm);
-        
-        ct.speedFunctionOfAngle(DefectManager.DEATH);
-        
-        
+//        for (int time = 1; time < 3; time++)
+//            for (double dist = 6; dist <= 18; dist += 2) {
+                
+                DefectManager dm = DefaultData.bacteria();//(time, dist);
+
+                BirthAndDeathTracker ct = new BirthAndDeathTracker(dm);
+
+//                ct.angleNearFusion(DefectManager.DEATH, 30);
+                
+                dm.writePairesToFile(new DefaultWriter("Bacteria_pairs.csv"));
+//            }
+
     }
 
     /**

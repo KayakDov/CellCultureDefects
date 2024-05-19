@@ -3,7 +3,6 @@ package snapDefects;
 import GeometricTools.Angle;
 import SnapManagement.Defect;
 import SnapManagement.NegDefect;
-import SnapManagement.PosDefect;
 import java.util.Arrays;
 
 /**

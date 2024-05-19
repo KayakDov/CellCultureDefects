@@ -6,7 +6,7 @@ import snapDefects.SpaceTemp;
  * A distance measuring tool in space and time.
  * @author E. Dov Neimand
  */
-public class SpaceTimeBall {
+public class OpenSpaceTimeBall {
     public final int rTime;
     public final double rSpace;
 
@@ -15,7 +15,7 @@ public class SpaceTimeBall {
      * @param rTime Values closer than rTime are in the ball.
      * @param rSpace Values closer that rSpace are in the ball.
      */
-    public SpaceTimeBall(int rTime, double rSpace) {
+    public OpenSpaceTimeBall(int rTime, double rSpace) {
         this.rTime = rTime;
         this.rSpace = rSpace;
     }

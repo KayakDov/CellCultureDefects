@@ -2,10 +2,11 @@ package Annalysis;
 
 import Charts.BarChart;
 import Charts.HeatMap;
+import Charts.Histogram;
 import Charts.LineChart;
 import Charts.NamedData;
 import Charts.ScatterPlot;
-import GeometricTools.SpaceTimeBall;
+import GeometricTools.OpenSpaceTimeBall;
 import GeometricTools.Vec;
 import SnapManagement.PairSnDef;
 import defectManagement.DefectManager;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.math3.util.Precision;
 
 /**
@@ -31,19 +33,29 @@ public class BirthAndDeathTracker {
      * The angle of the positive defect tail relative to the negative defect
      * location.
      *
-     * @param birth True for twins and false for spouses.
+     * @param isBirth True for twins and false for spouses.
+     * @param maxDist The maximum distance between the paired defects.
      */
-    public void angleNearFusion(boolean birth) {
+    public void angleNearFusion(boolean isBirth, int maxDist) {
+        
+        var pairs = dm.pairsAtDistance(pair -> pair.anglePRel().deg(), isBirth, maxDist);
         HeatMap.factory(
-                "angPRel as a function of distance",
+                dm.getName() + ": angPRel as a function of distance",
                 "distance",
                 "angPRel",
-                dm.pairsAtDistance(pair -> pair.anglePRel().deg(), birth, 90),
+                pairs,
                 1000,
-                5,
+                3,
                 Double.NaN,
                 360
         );
+//        
+//        Histogram.factory(
+//                pairs.stream().mapToDouble(vec -> vec.getY()).toArray(), 
+//                50, 
+//                dm.getName() + ": angle between pos tail and conecting line", 
+//                "angle"
+//        );
     }
 
     /**
@@ -120,7 +132,7 @@ public class BirthAndDeathTracker {
      * @param generalProximity A distance for which paired annihilation might be possible.
      * @param deathProximity Definition of near for considering annihilations to be paired.
      */
-    public void percentMergeAtPhase(double generalProximity, SpaceTimeBall deathProximity) {
+    public void percentMergeAtPhase(double generalProximity, OpenSpaceTimeBall deathProximity) {
         
         Map<Double, List<PairSnDef>> nearCollsionsAtPhase
                 = dm.nearCollsionsSnPairs(generalProximity)
@@ -157,5 +169,31 @@ public class BirthAndDeathTracker {
 //                "speed at angle");
         
         HeatMap.factory(dm.getName(), "mpAngle", "speed", vecs, 1000, .6, 2*Math.PI/3, Double.POSITIVE_INFINITY);
+    }
+    
+    
+    /**
+     * The distance as a function of frame.
+     * @param timeRange The time covered by the analysis.
+     * @param minLongevity The minimum amount of time a defect must be alive to be considered.
+     */
+    public void distanceOfFrame(int timeRange, int minLongevity){
+                
+                NamedData ann = new NamedData(dm.pairs(DefectManager.DEATH)
+                        .filter(pair -> pair.timeFromEvent < timeRange)
+                        .filter(pair -> dm.getDefect(pair.pos).age() > minLongevity && dm.getDefect(pair.neg).age() > minLongevity)
+                        .map(pair -> new Vec(-pair.timeFromEvent, pair.dist()))                        
+                        .collect(Collectors.toList()), "Annihilation");
+                
+                NamedData creation = new NamedData(dm.pairs(DefectManager.BIRTH)
+                        .filter(pair -> pair.timeFromEvent < timeRange)
+                        .filter(pair -> dm.getDefect(pair.pos).age() > minLongevity && dm.getDefect(pair.neg).age() > minLongevity)
+                        .map(pair -> new Vec(pair.timeFromEvent, pair.dist()))
+                        .collect(Collectors.toList()), "Creation");
+                
+                
+                
+                LineChart.factory("Distance Evolution Between Defect Pairs", "Frame", "Distance", ann, creation);
+
     }
 }

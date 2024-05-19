@@ -1,6 +1,6 @@
 package snapDefects;
 
-import GeometricTools.SpaceTimeBall;
+import GeometricTools.OpenSpaceTimeBall;
 import GeometricTools.Vec;
 
 
@@ -68,7 +68,7 @@ public class SpaceTemp extends Vec {
      * @param proximity The definition of closeness.
      * @return true if the points are within the specified spatial and temporal thresholds, false otherwise.
      */
-    public boolean near(SpaceTemp st, SpaceTimeBall proximity) {
+    public boolean near(SpaceTemp st, OpenSpaceTimeBall proximity) {
         return dist(st) <= proximity.rSpace && Math.abs(time - st.time) <= proximity.rTime;
     }
 

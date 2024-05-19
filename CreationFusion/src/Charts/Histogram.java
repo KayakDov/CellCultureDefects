@@ -31,7 +31,7 @@ public class Histogram extends JFrame {
         JFreeChart chart = ChartFactory.createHistogram(
                 title,                          // chart title
                 xAxisTitle,                           // x-axis label
-                "Frequency",                         // y-axis label
+                "Count",                         // y-axis label
                 dataset,                             // data
                 org.jfree.chart.plot.PlotOrientation.VERTICAL, // plot orientation
                 true,                                // include legend
@@ -58,7 +58,7 @@ public class Histogram extends JFrame {
     public static void factory(double[] data, int numBins, String title, String xAxis){
         SwingUtilities.invokeLater(() -> {
             Histogram histogram = new Histogram(title, data, xAxis, numBins);
-            histogram.setSize(800, 600);
+            histogram.setSize(600, 400);
             histogram.setLocationRelativeTo(null);
             histogram.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
             histogram.setVisible(true);
