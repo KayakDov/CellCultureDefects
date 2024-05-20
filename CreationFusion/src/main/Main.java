@@ -8,6 +8,7 @@ import snapDefects.SpaceTemp;
 import GeometricTools.Rectangle;
 import GeometricTools.OpenSpaceTimeBall;
 import ReadWrite.DefaultWriter;
+import ReadWrite.FormatedFileWriter;
 import ReadWrite.ReadManager;
 import defectManagement.DefectManager;
 import java.io.File;
@@ -173,15 +174,15 @@ public class Main {
 
 //        for (int time = 1; time < 3; time++)
 //            for (double dist = 6; dist <= 18; dist += 2) {
-                
-                DefectManager dm = DefaultData.bacteria();//(time, dist);
-
-                BirthAndDeathTracker ct = new BirthAndDeathTracker(dm);
-
+//                DefectManager dm = DefaultData.bacteria();//(time, dist);
+//                BirthAndDeathTracker ct = new BirthAndDeathTracker(dm);
 //                ct.angleNearFusion(DefectManager.BIRTH, 20);
 //                ct.distanceOfFrame(60, 5);
-                
-                dm.writePairesToFile(new DefaultWriter("Bacteria_pairs.csv"));
+        DefectManager dm = DefaultData.sampleDataSet();//.sampleDataSet();//(time, dist);
+        
+        try (FormatedFileWriter ffw = new DefaultWriter("SamplePairs.csv")) {
+            dm.writePairesToFile(ffw);
+        }
 //            }
 
     }

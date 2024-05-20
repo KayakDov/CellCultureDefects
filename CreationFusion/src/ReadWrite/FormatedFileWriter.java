@@ -34,8 +34,8 @@ public class FormatedFileWriter extends BufferedWriter {
         this.delimiter = delimiter;
         this.cols = cols;
         String firstLine = Arrays.stream(cols)
-                .map(col -> col.name + delimiter)
-                .reduce("", (a, b) -> a + b);
+                .map(col -> col.name)
+                .collect(Collectors.joining("" + delimiter));
         write(firstLine);
         newLine();
     }
@@ -48,12 +48,14 @@ public class FormatedFileWriter extends BufferedWriter {
     public void writeLine(PairedSnDef sdp) {
 
         try {
-            write(Arrays.stream(cols)
+            String line = Arrays.stream(cols)
                     .map(col -> col.apply(sdp))
-                    .collect(Collectors.joining("" + delimiter)));
+                    .collect(Collectors.joining("" + delimiter));
+            write(line);
             newLine();
         } catch (IOException ex) {
             Logger.getLogger(FormatedFileWriter.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
         }
     }
 

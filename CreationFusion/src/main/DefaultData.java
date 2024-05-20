@@ -44,7 +44,24 @@ public class DefaultData {
         ).setName("Bacteria: time = " + time + " dist = " + dist);
     }
 
+    /**
+     * The bacteria data set with default distances of 18 and time of 2.
+     * @return The bacteria data set.
+     */
     public static DefectManager bacteria() {
         return bacteria(2, 18);
     }
+    
+    /**
+     * A sample data set.
+     * @return A sample data set.
+     */
+    public static DefectManager sampleDataSet(){
+        return new DefectManager(
+                ReadManager.defaultFileFormat("SampleDataSet.csv"), 
+                new Rectangle(0, 0, 10, 10, 0), 
+                new OpenSpaceTimeBall(1, 2), 
+                0                
+        ).setName("sample data set");
+    }    
 }

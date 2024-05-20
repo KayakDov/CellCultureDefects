@@ -252,15 +252,13 @@ public abstract class DefectSet<T extends Defect> implements Collection<T> {
      */
     public void add(SnapDefect sd) {
 
-        testCharge(sd);
+//        testCharge(sd);
 
         locks[sd.getID()].lock();
         try {
             if (has(sd)) get(sd).addSnap(sd);
-            else {
-                if (sd.getCharge()) add((T) new PosDefect(sd));
-                else add((T) new NegDefect(sd));
-            };
+            else add((T) Defect.charged(sd));
+            
         } finally {
             locks[sd.getID()].unlock();
         }

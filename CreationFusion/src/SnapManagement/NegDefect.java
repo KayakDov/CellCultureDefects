@@ -1,6 +1,7 @@
 package SnapManagement;
 
 import defectManagement.DefectManager;
+import java.util.stream.Stream;
 import snapDefects.NegSnapDefect;
 import snapDefects.PosSnapDefect;
 import snapDefects.SnapDefect;
@@ -109,6 +110,11 @@ public class NegDefect extends Defect {
                 timeFromEvent(time, birth),
                 birth
         );
+    }
+
+    @Override
+    public Stream<NegSnapDefect> snapDefects() {
+        return path.stream().map(sd ->(NegSnapDefect)sd);
     }
     
     

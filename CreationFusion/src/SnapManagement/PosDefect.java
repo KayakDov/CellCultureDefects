@@ -5,6 +5,7 @@ import defectManagement.DefectManager;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 import snapDefects.NegSnapDefect;
 import snapDefects.PosSnapDefect;
 import snapDefects.SnapDefect;
@@ -144,6 +145,11 @@ public class PosDefect extends Defect {
      */
     public boolean isFuseUp(boolean birth) {
         return birth?fuseUpTwin:fuseUpSpouse;
+    }
+    
+    @Override
+    public Stream<PosSnapDefect> snapDefects() {
+        return path.stream().map(sd ->(PosSnapDefect)sd);
     }
     
 }

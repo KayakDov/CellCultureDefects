@@ -384,6 +384,14 @@ public abstract class Defect implements hasChargeID {
     public List<? extends SnapDefect> getLifeCourse() {
         return Collections.unmodifiableList(path);
     }
+    
+    /**
+     * The snap defects that make up the life course of this defect.
+     * @return The snap defects that make up the life course of this defect.
+     */
+    public Stream<? extends SnapDefect> snapDefects(){
+        return path.stream();
+    }
 
     /**
      * Gives a stream of the AnglesPRel for pairs of this defect.
@@ -474,15 +482,6 @@ public abstract class Defect implements hasChargeID {
         path.stream().filter(snap -> snap != null).forEach(snap -> snap.setId(Id));
     }
 
-    /**
-     * Is this defect tracking its entire life course.
-     *
-     * @return True if this defect is tracking its entire life course, false
-     * otherwise.
-     */
-    public boolean isTrackingLifeCourse() {
-        return path != null;
-    }
 
     /**
      * Is this defect eligible to be paired.
@@ -503,5 +502,14 @@ public abstract class Defect implements hasChargeID {
     public void setEligable(boolean birth, boolean eligibility) {
         if (birth) eligibleForTwin = eligibility;
         else eligibleForSpouse = eligibility;
+    }
+    
+    /**
+     * Returns a charged defect from a snap defect.
+     * @param sd The snap defect required by the constructor.
+     * @return A charged Defect, either a NegDefect or a PosDefect.
+     */
+    public static Defect charged(SnapDefect sd){
+        return sd.getCharge()? new PosDefect(sd): new NegDefect(sd);
     }
 }
