@@ -193,7 +193,7 @@ public class BirthAndDeathTracker {
                 
                 
                 
-                LineChart.factory("Distance Evolution Between Defect Pairs", "Frame", "Distance", ann, creation);
+                LineChart.factory("Distance Evolution Between Defect Pairs: " + dm.getName(), "Frame", "Distance", ann, creation);
 
     }
 }

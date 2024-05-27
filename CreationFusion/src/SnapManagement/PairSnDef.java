@@ -52,16 +52,14 @@ public class PairSnDef {
     public double dist() {
         if (!workingPair()) return Double.POSITIVE_INFINITY;
         return pos.loc.dist(neg.loc);
-    }
-
-    
+    }    
     
     /**
      * 
      * The black line relative to the x axis, equivalently, the angle of the
-     * vector from the minus defect to the positive defect.
+     * vector from the positive defect to the negative defect.
      *
-     * @return The angle of the vector from the negative defect to the positive
+     * @return The angle of the vector from the positive defect to the negative
      * defect, with the x axis. Returns double.NaN if one of the defects is
      * null;
      */
@@ -77,7 +75,6 @@ public class PairSnDef {
      * Returns double.NaN if one of the defects is null;
      */
     public Angle anglePRel() {
-        if (!workingPair()) return Angle.NaN;
         return pos.tailAngle().minus(mpAngle());
     }
 
@@ -142,13 +139,13 @@ public class PairSnDef {
     }
 
     /**
-     * This is the (angle of the positive relative to the negative defect)
+     * This is the angle of the velocity(of the positive relative to the negative defect)
      * relative to the velocity angle.
      *
      * @return This is the (angle of the positive relative to the negative
      * defect) relative to the velocity angle.
      */
-    public Angle anglep1_rel_vel_angle() {
+    public Angle angleP1RelVelAngle() {
         if (pos.getVelocity() == null) return Angle.NaN;
         return anglePRel().minus(pos.getVelocity().angle());
     }
@@ -182,7 +179,5 @@ public class PairSnDef {
      */
     public boolean shareEvent(OpenSpaceTimeBall proximity, DefectManager dm, boolean birth){
         return proximity.near(posDef(dm).get(birth), dm.getDefect(neg).get(birth));
-    }
-   
-    
+    }       
 }

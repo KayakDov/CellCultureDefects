@@ -453,7 +453,7 @@ public abstract class Defect implements hasChargeID {
      * form its pair.
      */
     public int maxDistIndex(boolean birth) {
-        int index = new UnimodalArrayMax(defectPairs(birth).mapToDouble(pair -> pair.dist()).toArray()).compute();
+        int index = new UnimodalArrayMax(defectPairs(birth).filter(pair -> pair.workingPair()).mapToDouble(pair -> pair.dist()).toArray()).compute();
 
         while (index < path.size() - 1
                 && pairFromBirth(index).dist() < pairFromBirth(workingPairAfter(index + 1)).dist())

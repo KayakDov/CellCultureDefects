@@ -9,7 +9,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -17,7 +16,7 @@ import java.util.stream.Stream;
 /**
  * @author E. Dov Neimand Specifications for file structure.
  */
-public class ReadManager {
+public class ReadManager extends SpreadsheetManager {
 
     /**
      * An instance with the default file specs.
@@ -29,14 +28,6 @@ public class ReadManager {
     public static ReadManager defaultFileFormat(String fileName) {
         return new ReadManager("x_img", "y_img", "TRACK_ID", "POSITION_T", "charge", "ang1", ',', fileName);
     }
-
-    public int x, y, id, time, angle1, charge;
-    public final char delimiter;
-
-    /**
-     *The name of the file.
-     */
-    public final String fileName;
 
     /**
      * Finds the index of the key in the array.
@@ -55,7 +46,7 @@ public class ReadManager {
     /**
      * The names of the columns.
      */
-    private final String xHead, yHead, idHead, timeHead, chargeHead, angleHead;
+    private final String x, y, id, time, charge, angle;
 
     /**
      * Sets the indices of the needed values in the file.
@@ -76,49 +67,27 @@ public class ReadManager {
      * on it.
      */
     public ReadManager(String x, String y, String id, String time, String charge, String angle, char delimiter, String fileName) {
-        this.xHead = x;
-        this.yHead = y;
-        this.idHead = id;
-        this.timeHead = time;
-        this.chargeHead = charge;
-        this.angleHead = angle;
-        this.fileName = fileName;
-        this.delimiter = delimiter;
-        setIndicesFromHeader();
+        super(fileName, delimiter);
+        this.x = x;
+        this.y = y;
+        this.id = id;
+        this.time = time;
+        this.charge = charge;
+        this.angle = angle;
+     
     }
 
-    /**
-     * Sets the indices to read the file.
-     *
-     * @param fileInd The index of the file to be read.
-     */
-    private final void setIndicesFromHeader() {
-        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
-            String[] split = br.readLine().split("" + delimiter);
-            this.x = indexOf(split, xHead);
-            this.y = indexOf(split, yHead);
-            this.id = indexOf(split, idHead);
-            this.time = indexOf(split, timeHead);
-            this.charge = indexOf(split, chargeHead);
-            this.angle1 = indexOf(split, angleHead);
-
-        } catch (Exception ex) {
-            Logger.getLogger(ReadManager.class
-                    .getName()).log(Level.SEVERE, null, ex);
-            throw new RuntimeException(ex);
-        }
-    }
-    
     /**
      * The number of frames in the file.
+     *
      * @return The number of frames in the file.
      */
-    public int numFrames(){
-        try {
-            Reader reader = getReader();
+    public int numFrames() {
+        
+        try(Reader reader = getReader()){
             int numFrames = 0;
             String nextLine;
-            while((nextLine = reader.readLine()) != null)
+            while ((nextLine = reader.readLine()) != null)
                 numFrames = time(nextLine);
             return numFrames;
         } catch (IOException ex) {
@@ -126,12 +95,13 @@ public class ReadManager {
             throw new RuntimeException(ex);
         }
     }
-    
+
     /**
-     * Gets a file reader for a file with this default arangement.
-     *
-     * @return
+     * Gets a file reader for a file with this default arrangement.
+     * Don't forget to close the reader when you're done with it.
+     * @return A file reader.
      */
+    @Override
     public Reader getReader() {
         try {
             return new Reader();
@@ -171,33 +141,33 @@ public class ReadManager {
      * it. The line needs to be separated by comas and the indices of its values
      * must match the public final static ints above.
      *
-     * @param line The formatted line to be parsed.
+     * @param row The formatted line to be parsed.
      * @return The snap defect generated from the line.
      */
-    public SnapDefect snapDefect(String line) {
+    public SnapDefect snapDefect(String row) {
         try {
-            if (line == null) return null;
-            String[] split = line.split("" + delimiter);
+            if (row == null) return null;
+            String[] split = row.split("" + delimiter);
 
-            double lineX = Double.parseDouble(split[x]);
-            double lineY = Double.parseDouble(split[y]);
-            int lineT = (int) Double.parseDouble(split[time]);
-            int lineID = "".equals(split[id])
+            double lineX = Double.parseDouble(split[indexOf(x)]);
+            double lineY = Double.parseDouble(split[indexOf(y)]);
+            int lineT = (int) Double.parseDouble(split[indexOf(time)]);
+            int lineID = "".equals(split[indexOf(id)])
                     ? SnapDefect.NO_ID
-                    : (int) Double.parseDouble(split[id]);
-            boolean lineCharge = Double.parseDouble(split[charge]) > 0;
-            double lineAng1 = Double.parseDouble(split[angle1]);
+                    : (int) Double.parseDouble(split[indexOf(id)]);
+            boolean lineCharge = Double.parseDouble(split[indexOf(charge)]) > 0;
+            double lineAng1 = Double.parseDouble(split[indexOf(angle)]);
             if (lineCharge)
                 return new PosSnapDefect(lineX, lineY, lineT, lineID, lineAng1);
 
-            double lineAng2 = Double.parseDouble(split[angle1 + 1]);
-            double lineAng3 = Double.parseDouble(split[angle1 + 2]);
+            double lineAng2 = Double.parseDouble(split[indexOf(angle) + 1]);
+            double lineAng3 = Double.parseDouble(split[indexOf(angle) + 2]);
 
             return new NegSnapDefect(lineX, lineY, lineT, lineID, lineAng1, lineAng2, lineAng3);
 
         } catch (NumberFormatException nfe) {
             throw new NumberFormatException(nfe.getMessage()
-                    + "\n Original line is: " + line);
+                    + "\n Original line is: " + row);
         }
 
     }
@@ -209,40 +179,19 @@ public class ReadManager {
      * @return True if it has a tracking ID, false otherwise.
      */
     public boolean isTracked(String line) {
-        int first = charCount(line, 0, id);
-        return !line.substring(first, charCount(line, first, 1) - 1)
-                .equals("");
-    }
-
-    /**
-     * The index immediately after the nth comma in the string after start.
-     *
-     * @param string The string for whom the index is desired.
-     * @param start Where to start counting commas.
-     * @param n the number of commas.
-     * @return The index of the nth comma in the string after start index.
-     */
-    private int charCount(String string, int start, int n) {
-        if (string == null)
-            throw new NullPointerException("You passed a null string.");
-        int i = start;
-        int count = 0;
-        for (; i < string.length() && count < n; i++)
-            if (string.charAt(i) == delimiter) count++;
-        if (count < n) return string.length() + 1;
-        return i;
+        return !getCol(line, charge).equals("");
     }
 
     /**
      * Gets the double at the given index in the line.
      *
      * @param str The line.
-     * @param index The index of the formatted line for the desired double.
+     * @param colName The index of the formatted line for the desired double.
      * @return The value at the given index in the formatted line.
      */
-    private double doubleAt(String str, int index) {
-        int startTerm = charCount(str, 0, index);
-        String subStr = str.substring(startTerm, charCount(str, startTerm, 1) - 1);
+    private double doubleAt(String str, String colName) {
+        
+        String subStr = super.getCol(str, colName);
         if (subStr.isEmpty()) return Double.NaN;
         return Double.parseDouble(subStr);
     }
@@ -258,19 +207,6 @@ public class ReadManager {
 
     }
 
-    /**
-     * A stream of all the snap defects.
-     *
-     * @return A stream of all the snap defects.
-     */
-    public Stream<String> lines() {
-        try {
-            return Files.lines(new File(fileName).toPath()).skip(1);
-        } catch (IOException ex) {
-            Logger.getLogger(ReadManager.class.getName()).log(Level.SEVERE, null, ex);
-            throw new RuntimeException(ex);
-        }
-    }
 
     /**
      * All the snap defects in the file.
@@ -285,18 +221,11 @@ public class ReadManager {
      * A buffered reader for the file. This reader will skip lines outside the
      * window, and can go back one line, but never further.
      */
-    public class Reader extends BufferedReader{
+    public class Reader extends SpreadsheetManager.Reader {
 
-        
         public Reader() throws FileNotFoundException {
-            super(new FileReader(fileName));
-            try {
-                readLine();
-            } catch (IOException ex) {
-                Logger.getLogger(ReadManager.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            super();
         }
-
 
         /**
          * reads the next snap defect

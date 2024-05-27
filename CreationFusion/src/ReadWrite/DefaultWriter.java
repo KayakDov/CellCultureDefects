@@ -278,7 +278,7 @@ public class DefaultWriter extends FormatedFileWriter {
     public static Column anglePRelVelAngle = new Column("anglep1_rel_vel_angle") {
         @Override
         public String apply(PairedSnDef sdp) {
-            return sdp.anglep1_rel_vel_angle().rad() + "";
+            return sdp.angleP1RelVelAngle().rad() + "";
         }
     };
 

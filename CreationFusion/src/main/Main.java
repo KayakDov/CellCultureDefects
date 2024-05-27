@@ -1,5 +1,6 @@
 package main;
 
+import ReadWrite.SpreadsheetManager;
 import Annalysis.BirthAndDeathTracker;
 import Charts.HeatMap;
 import Charts.NamedData;
@@ -12,8 +13,15 @@ import ReadWrite.FormatedFileWriter;
 import ReadWrite.ReadManager;
 import defectManagement.DefectManager;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -91,56 +99,25 @@ public class Main {
     }
 
     /**
-     * Working on the bacteria file.
-     */
-    public static void bacteriaWork() {
-        DefectManager dm = DefaultData.bacteria();
-
-        System.out.println(dm.pairs(DefectManager.DEATH).count());
-
-        NamedData mpPhaseOfMpAngle = dm.getNamedData(
-                p -> p.mpPhase(),
-                p -> p.mpAngle().deg(),
-                DefectManager.DEATH,
-                "",
-                15
-        );
-
-        HeatMap.factory(
-                "Bacteria",
-                "mpAngle",
-                "mpPhase",
-                mpPhaseOfMpAngle.data,
-                900,
-                .5,
-                2 * Math.PI / 3,
-                2 * Math.PI
-        );
-
-        ScatterPlot.factory("Bacteria", "mpPhase", "mpAngle", mpPhaseOfMpAngle);
-
-    }
-
-    /**
      * parses the arguments
      *
      * @param args The user arguments.
      */
     public static void parseArgs(String[] args) throws IOException {
 
-        args = new String[12];
-        args[0] = "PlusAndMinusTM6.csv";
-        args[1] = "Bacteria_pairs.csv";
-        args[2] = "window";
-        args[3] = "900";
-        args[4] = "0";
-        args[5] = "900";
-        args[6] = "900";
-        args[7] = "threshold";
-        args[8] = "8";//small number for bacteria, larger number for cells
-        args[9] = "2";
-        args[10] = "20";
-        args[11] = "5";
+//        args = new String[12];
+//        args[0] = "PlusAndMinusTM.csv";
+//        args[1] = "Bacteria_pairs.csv";
+//        args[2] = "window";
+//        args[3] = "900";
+//        args[4] = "0";
+//        args[5] = "900";
+//        args[6] = "900";
+//        args[7] = "threshold";
+//        args[8] = "8";//small number for bacteria, larger number for cells
+//        args[9] = "2";
+//        args[10] = "20";
+//        args[11] = "5";
 
         File from = new File(args[0]);
 
@@ -151,39 +128,65 @@ public class Main {
             files = Arrays.stream(new File(parent).list()).map(str -> parent + "//" + str).toArray(String[]::new);
         } else files = new String[]{args[0]};
 
-        DefaultWriter writer = new DefaultWriter(args[1]);
+        try (DefaultWriter writer = new DefaultWriter(args[1])) {
 
-        for (String fileName : files) {
-            DefectManager dm = new DefectManager(
-                    ReadManager.defaultFileFormat(fileName),
-                    getWindow(args),
-                    new OpenSpaceTimeBall(timeThreshold(args), distThreshold(args)),
-                    timeEdge(args)
-            );
-            writer.setIdPrefix(fileName.replaceAll("[^0-9]", "") + ".");//Sets the ID prefix to be the numbers in the file name.
-            dm.writePairesToFile(writer);
+            for (String fileName : files) {
+                DefectManager dm = new DefectManager(
+                        ReadManager.defaultFileFormat(fileName),
+                        getWindow(args),
+                        new OpenSpaceTimeBall(timeThreshold(args), distThreshold(args)),
+                        timeEdge(args)
+                );
+                
+                
+                
+                writer.setIdPrefix(fileName.replaceAll("[^0-9]", "") + ".");//Sets the ID prefix to be the numbers in the file name.
+                dm.writePairesToFile(writer);
+            }
         }
+        
+//        checkFile(args[1]);
 
+    }
+    
+    /**
+     * Keep this method empty unless simple tests need to be conducted on the file created.
+     * @param fileName 
+     */
+    private static void checkFile(String fileName){
+        try {
+            SpreadsheetManager.Reader ssr = new SpreadsheetManager(fileName).getReader();
+            Map<Double, Integer> ids = new HashMap<>();
+            String id;
+            while((id = ssr.readLine("plus_id")) != null){
+                double key = Double.parseDouble(id);
+                ids.put(key, ids.containsKey(key)?ids.get(key) + 1:1);
+            }
+            
+            System.out.println(ids.values().stream().mapToInt(i -> i).max().getAsInt());
+            
+            
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**
      * produces a pair file with some default settings for a bunch of cell
      * experiments.
      */
-    public static void cellExperiments() throws IOException {
+    public static void defaults() throws IOException {
 
-//        for (int time = 1; time < 3; time++)
-//            for (double dist = 6; dist <= 18; dist += 2) {
-//                DefectManager dm = DefaultData.bacteria();//(time, dist);
-//                BirthAndDeathTracker ct = new BirthAndDeathTracker(dm);
-//                ct.angleNearFusion(DefectManager.BIRTH, 20);
-//                ct.distanceOfFrame(60, 5);
-        DefectManager dm = DefaultData.sampleDataSet();//.sampleDataSet();//(time, dist);
-        
-        try (FormatedFileWriter ffw = new DefaultWriter("SamplePairs.csv")) {
+        DefectManager dm = DefaultData.bacteria();//(time, dist);
+        BirthAndDeathTracker ct = new BirthAndDeathTracker(dm);
+//        ct.angleNearFusion(DefectManager.BIRTH, 20);
+        ct.distanceOfFrame(1000, 0);
+
+        try (FormatedFileWriter ffw = new DefaultWriter("BacteriaPairs.csv")) {
             dm.writePairesToFile(ffw);
         }
-//            }
 
     }
 
@@ -193,8 +196,8 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
 
-//        bacteriaWork();
-        cellExperiments();
+        defaults();
+        
 //        parseArgs(args);
     }
 

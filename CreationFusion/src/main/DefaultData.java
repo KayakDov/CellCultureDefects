@@ -29,19 +29,21 @@ public class DefaultData {
      *
      * @param time How close must pair events be in time?
      * @param dist How close must pairs be at their creation 
+     * @param distFromEdge The distance from the edge a creation of fusion event needs to be to be registered.
+     * @param timeFromEdge
      * @return The bacteria data set.
      */
-    public static DefectManager bacteria(int time, double dist) {
+    public static DefectManager bacteria(int time, double dist, double distFromEdge, int timeFromEdge) {
 
-        final Rectangle defaultBacteriaDimensions = new Rectangle(900, 0, 900, 900, 20);
+        final Rectangle defaultBacteriaDimensions = new Rectangle(900, 0, 900, 900, distFromEdge);
         final OpenSpaceTimeBall defaultProximity = new OpenSpaceTimeBall(time, dist);
 
         return new DefectManager(
                 ReadManager.defaultFileFormat("PlusAndMinusTM6.csv"),
                 defaultBacteriaDimensions,
                 defaultProximity,
-                defaultProximity.rTime * 2
-        ).setName("Bacteria: time = " + time + " dist = " + dist);
+                timeFromEdge
+        ).setName("Bacteria: time = " + time + " dist = " + dist + " boundary area = " + distFromEdge + " time from Edge " + timeFromEdge);
     }
 
     /**
@@ -49,7 +51,7 @@ public class DefaultData {
      * @return The bacteria data set.
      */
     public static DefectManager bacteria() {
-        return bacteria(2, 18);
+        return bacteria(2, 10, 30, 2);
     }
     
     /**

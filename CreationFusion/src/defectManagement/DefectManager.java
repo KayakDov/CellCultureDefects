@@ -15,6 +15,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.IntToDoubleFunction;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -75,7 +77,7 @@ public class DefectManager {
      */
     public DefectManager(ReadManager readManager, Rectangle window, OpenSpaceTimeBall ball, int timeToEdge) {
 
-        MaxFileValues mfv = new MaxFileValues(readManager.getReader());
+        MaxFileValues mfv = new MaxFileValues(readManager);
 
         posDefects = new PosDefectSet(mfv.maxPosID + 1);
         negDefects = new NegDefectSet(mfv.maxNegID + 1);
@@ -95,7 +97,6 @@ public class DefectManager {
         setFuseUp(Integer.MAX_VALUE);
 
     }
-    
 
     /**
      * Goes through the file and finds the max positive and negative values as
@@ -109,15 +110,20 @@ public class DefectManager {
          * Goes through the file and finds the max positive and negative values
          * as well as the frame count.
          */
-        public MaxFileValues(ReadManager.Reader reader) {
-            SnapDefect sd;
-            while ((sd = reader.readSnap()) != null) {
-                if (sd.isTracked()) {
-                    if (sd.getCharge())
-                        maxPosID = Math.max(sd.getID(), maxPosID);
-                    else maxNegID = Math.max(sd.getID(), maxNegID);
+        public MaxFileValues(ReadManager rm) {
+
+            try (ReadManager.Reader reader = rm.getReader()){
+                SnapDefect sd;
+                while ((sd = reader.readSnap()) != null) {
+                    if (sd.isTracked()) {
+                        if (sd.getCharge())
+                            maxPosID = Math.max(sd.getID(), maxPosID);
+                        else maxNegID = Math.max(sd.getID(), maxNegID);
+                    }
+                    frameCount = Math.max(frameCount, sd.getTime());
                 }
-                frameCount = Math.max(frameCount, sd.getTime());
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
             }
         }
 
@@ -393,9 +399,9 @@ public class DefectManager {
      */
     public double percentTracked(ReadManager rm) throws IOException {
         double count = 0;
-        ReadManager.Reader reader = rm.getReader();
-        while (reader.readLine() != null) count++;
-        reader.close();
+        try (ReadManager.Reader reader = rm.getReader()) {
+            while (reader.readLine() != null) count++;
+        }
         return size() / count;
     }
 
@@ -534,8 +540,8 @@ public class DefectManager {
     public double spouseIsTwin() {
         return (double) positives()
                 .filter(Defect::spouseIsTwin)
-                .count() / 
-                positives()
+                .count()
+                / positives()
                         .filter(pos -> pos.isEligable(BIRTH) && pos.isEligable(DEATH))
                         .count();
     }
@@ -548,8 +554,8 @@ public class DefectManager {
     public double hasSpouseAndTwin() {
         return (double) positives()
                 .filter(defect -> defect.hasSpouse() && defect.hasTwin())
-                .count() / 
-                positives()
+                .count()
+                / positives()
                         .filter(pos -> pos.isEligable(BIRTH) && pos.isEligable(DEATH))
                         .count();
     }

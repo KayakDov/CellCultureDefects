@@ -172,12 +172,12 @@ public class Frame {
          */
         public FileData(ReadManager rm) {
 
-            ReadManager.Reader reader = rm.getReader();
-            
             int numFrames = 0, maxFrameSize = 0, currentFrameSize = 0;
-            
             String nextLine;
-            try {
+            
+            
+            try(ReadManager.Reader reader = rm.getReader()){
+                
                 while((nextLine = reader.readLine()) != null){
                     int frameNum = rm.time(nextLine);
                     if(frameNum == numFrames) currentFrameSize++;
