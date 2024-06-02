@@ -1,33 +1,39 @@
 package main;
 
-import ReadWrite.SpreadsheetManager;
+import Animation.DrawDefects;
+import ReadWrite.SpreadsheetReadManager;
 import Annalysis.BirthAndDeathTracker;
-import Charts.HeatMap;
-import Charts.NamedData;
-import Charts.ScatterPlot;
 import snapDefects.SpaceTemp;
 import GeometricTools.Rectangle;
 import GeometricTools.OpenSpaceTimeBall;
+import GeometricTools.Vec;
 import ReadWrite.DefaultWriter;
 import ReadWrite.FormatedFileWriter;
+import ReadWrite.PairReadManager;
 import ReadWrite.ReadManager;
+import SnapManagement.PairSnDef;
 import defectManagement.DefectManager;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author E. Dov Neimand
  */
 public class Main {
+
+    /**
+     * Tests the pair move creation method.
+     */
+    private static void testImageCreation() {
+        PairReadManager prm = PairReadManager.defaultFileFormat("BacteriaPairs.csv");
+        List<PairSnDef> pairs = prm.pairSetContainingLine(1);
+        DrawDefects.draw("images/source/PosDef.png", "images/source/NegDef.png", "images/output/", pairs);
+    }
 
     /**
      * If the list of arguments contains the word window, then the four numbers
@@ -118,59 +124,50 @@ public class Main {
 //        args[9] = "2";
 //        args[10] = "20";
 //        args[11] = "5";
+        if (!new File(args[1]).isDirectory()) {
+            DefectManager dm = new File(args[0]).isDirectory()
+                    ? new DefectManager(
+                            args[0],
+                            getWindow(args),
+                            new OpenSpaceTimeBall(timeThreshold(args), distThreshold(args)),
+                            timeEdge(args)
+                    )
+                    : new DefectManager(
+                            ReadManager.defaultFileFormat(args[0]),
+                            getWindow(args),
+                            new OpenSpaceTimeBall(timeThreshold(args), distThreshold(args)),
+                            timeEdge(args)
+                    );
 
-        File from = new File(args[0]);
-
-        String[] files;
-
-        if (from.isDirectory()) {
-            String parent = from.toString();
-            files = Arrays.stream(new File(parent).list()).map(str -> parent + "//" + str).toArray(String[]::new);
-        } else files = new String[]{args[0]};
-
-        try (DefaultWriter writer = new DefaultWriter(args[1])) {
-
-            for (String fileName : files) {
-                DefectManager dm = new DefectManager(
-                        ReadManager.defaultFileFormat(fileName),
-                        getWindow(args),
-                        new OpenSpaceTimeBall(timeThreshold(args), distThreshold(args)),
-                        timeEdge(args)
-                );
-                
-                
-                
-                writer.setIdPrefix(fileName.replaceAll("[^0-9]", "") + ".");//Sets the ID prefix to be the numbers in the file name.
+            try (DefaultWriter writer = new DefaultWriter(args[1])) {
                 dm.writePairesToFile(writer);
             }
+        } else {
+            PairReadManager prm = PairReadManager.defaultFileFormat(args[0]);
+            List<PairSnDef> pairs = prm.pairSetContainingLine(Integer.parseInt(args[2]));
+            DrawDefects.draw("PosDef.png", "NegDef.png", args[1], pairs);
         }
-        
-//        checkFile(args[1]);
 
+//        checkFile(args[1]);
     }
-    
+
     /**
-     * Keep this method empty unless simple tests need to be conducted on the file created.
-     * @param fileName 
+     * Keep this method empty unless simple tests need to be conducted on the
+     * file created.
+     *
+     * @param fileName "plus_id"
      */
-    private static void checkFile(String fileName){
-        try {
-            SpreadsheetManager.Reader ssr = new SpreadsheetManager(fileName).getReader();
-            Map<Double, Integer> ids = new HashMap<>();
-            String id;
-            while((id = ssr.readLine("plus_id")) != null){
-                double key = Double.parseDouble(id);
-                ids.put(key, ids.containsKey(key)?ids.get(key) + 1:1);
-            }
-            
-            System.out.println(ids.values().stream().mapToInt(i -> i).max().getAsInt());
-            
-            
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        }
+    private static void checkOutputFile(String fileName) {
+        SpreadsheetReadManager ssr = new SpreadsheetReadManager(fileName);
+
+        Map<Integer, Integer> idCounts = new HashMap<>();
+
+        ssr.lines("plus_id")
+                .mapToInt(posIDString -> Integer.valueOf(posIDString))
+                .forEach(id -> idCounts.put(id, idCounts.getOrDefault(id, 0) + 1));
+
+        System.out.println(idCounts.values().stream().mapToInt(i -> i).max().getAsInt());
+
     }
 
     /**
@@ -196,9 +193,9 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
 
-        defaults();
-        
-//        parseArgs(args);
+//        testImageCreation();
+//        defaults();
+        parseArgs(args);
     }
 
 }

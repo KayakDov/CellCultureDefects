@@ -6,8 +6,10 @@ import GeometricTools.Vec;
 import defectManagement.DefectManager;
 import java.util.Arrays;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import snapDefects.NegSnapDefect;
 import snapDefects.PosSnapDefect;
+import snapDefects.SnapDefect;
 
 /**
  *
@@ -179,5 +181,24 @@ public class PairSnDef {
      */
     public boolean shareEvent(OpenSpaceTimeBall proximity, DefectManager dm, boolean birth){
         return proximity.near(posDef(dm).get(birth), dm.getDefect(neg).get(birth));
-    }       
+    }
+    
+    /**
+     * Checks if the proffered pair contains the same two defects as this pair.
+     * @param pair A pair that might have the same two defects as this pair, 
+     * though at a different time.
+     * @return True if the proffered pair has the same two defects as this pair,
+     * false otherwise.
+     */
+    public boolean samePairDifferentTime(PairSnDef pair){
+        return pos.getId() == pair.pos.getId() && neg.getId() == pair.neg.getId();
+    }
+    
+    /**
+     * A stream of the snap defects in this pair.
+     * @return A stream of the snap defects in this pair.
+     */
+    public Stream<SnapDefect> defects(){
+       return Stream.of(pos, neg);
+    }
 }

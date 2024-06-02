@@ -16,16 +16,15 @@ public interface hasChargeID {
      * The ID.
      * @return The ID. 
      */
-    public int getID();
-    
-    
+    public int getId();
+   
     
     /**
      * Checks if this defect is tracked (i.e., has an ID assigned).
      * @return true if the defect is tracked, false otherwise.
      */
     public default boolean isTracked() {
-        return getID() != SnapDefect.NO_ID;
+        return getId() != SnapDefect.NO_ID;
     }
 
 }

@@ -18,7 +18,6 @@ import java.util.stream.Stream;
  */
 public abstract class Defect implements hasChargeID {
 
-    public int ID;
     protected ArrayList<SnapDefect> path;
     private Defect twin, spouse;
     private boolean eligibleForSpouse, eligibleForTwin;
@@ -30,8 +29,7 @@ public abstract class Defect implements hasChargeID {
      *
      */
     protected Defect(SnapDefect sd) {
-        path = new ArrayList<>(10);
-        this.ID = sd.getID();
+        path = new ArrayList<>(10);        
         path.add(sd);
     }
 
@@ -199,7 +197,7 @@ public abstract class Defect implements hasChargeID {
     // toString method
     @Override
     public String toString() {
-        return "ID: " + getID() + " lived from " + getBirth() + " to " + getDeath() + "\n";
+        return "ID: " + getId() + " lived from " + getBirth() + " to " + getDeath() + "\n";
     }
 
     /**
@@ -208,8 +206,8 @@ public abstract class Defect implements hasChargeID {
      * @return The ID of this node.
      */
     @Override
-    public int getID() {
-        return ID;
+    public int getId() {
+        return snapFromEvent(0, DefectManager.BIRTH).getId();
     }
 
     /**
@@ -345,15 +343,6 @@ public abstract class Defect implements hasChargeID {
     }
 
     /**
-     * Is this defects entire life course meant to be tracked.
-     *
-     * @return True if it is, false otherwise.
-     */
-    public boolean followingLifeCourse() {
-        return path != null;
-    }
-
-    /**
      * Sets the velocity of all the snap defects.
      */
     public void setVelocities() {
@@ -478,7 +467,6 @@ public abstract class Defect implements hasChargeID {
      * @param Id
      */
     public void setID(int Id) {
-        this.ID = Id;
         path.stream().filter(snap -> snap != null).forEach(snap -> snap.setId(Id));
     }
 

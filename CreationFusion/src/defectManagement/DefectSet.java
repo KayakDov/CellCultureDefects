@@ -148,8 +148,8 @@ public abstract class DefectSet<T extends Defect> implements Collection<T> {
      * @return True if the set contains it, false otherwise.
      */
     public boolean contains(Defect def) {
-        return get(def.getID()) != null
-                && get(def.getID()).getCharge() == def.getCharge();
+        return get(def.getId()) != null
+                && get(def.getId()).getCharge() == def.getCharge();
     }
 
     /**
@@ -219,7 +219,7 @@ public abstract class DefectSet<T extends Defect> implements Collection<T> {
         boolean vacant = !has(e);
         if (vacant) size++;
 
-        set(e.getID(), e);
+        set(e.getId(), e);
         return vacant;
     }
 
@@ -230,7 +230,7 @@ public abstract class DefectSet<T extends Defect> implements Collection<T> {
      * @return True if the ID is present in the set, false otherwise.
      */
     private boolean has(hasChargeID id) {
-        return get(id.getID()) != null;
+        return get(id.getId()) != null;
     }
 
     /**
@@ -241,7 +241,7 @@ public abstract class DefectSet<T extends Defect> implements Collection<T> {
      * there is none.
      */
     public T get(hasChargeID id) {
-        return get(id.getID());
+        return get(id.getId());
     }
 
     /**
@@ -252,15 +252,14 @@ public abstract class DefectSet<T extends Defect> implements Collection<T> {
      */
     public void add(SnapDefect sd) {
 
-//        testCharge(sd);
+        testCharge(sd);
 
-        locks[sd.getID()].lock();
+        locks[sd.getId()].lock();
         try {
             if (has(sd)) get(sd).addSnap(sd);
             else add((T) Defect.charged(sd));
-            
         } finally {
-            locks[sd.getID()].unlock();
+            locks[sd.getId()].unlock();
         }
     }
 
@@ -276,10 +275,10 @@ public abstract class DefectSet<T extends Defect> implements Collection<T> {
      * @return True if teh defect was present. False otherwise.
      */
     public boolean remove(Defect def) {
-        boolean has = get(def.getID()) != null;
+        boolean has = get(def.getId()) != null;
         if (!has) return false;
         size--;
-        set(def.getID(), null);
+        set(def.getId(), null);
         return true;
     }
 

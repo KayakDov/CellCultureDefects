@@ -12,7 +12,7 @@ public abstract class SnapDefect implements hasChargeID {
 
     public final SpaceTemp loc;
 
-    private int id;
+    private int id, experimentNumber = -1;
 
     public final static int NO_ID = Integer.MAX_VALUE;
 
@@ -45,7 +45,7 @@ public abstract class SnapDefect implements hasChargeID {
     }
 
     @Override
-    public int getID() {
+    public int getId() {
         return id;
     }
 
@@ -120,7 +120,7 @@ public abstract class SnapDefect implements hasChargeID {
 
     @Override
     public String toString() {
-        return loc.toString() + ", charge = " + (getCharge() ? "pos" : "neg") + ", id = " + getID() + "\n";
+        return loc.toString() + ", charge = " + (getCharge() ? "pos" : "neg") + ", id = " + getId() + "\n";
     }
 
     /**
@@ -163,4 +163,15 @@ public abstract class SnapDefect implements hasChargeID {
         return this;
     }
 
+    /**
+     * Sets the experiment number. This is only important to set if there
+     * is more than one experiment.
+     * @param experimentNumber 
+     * @return this;
+     */
+    public SnapDefect setExperimentNumber(int experimentNumber) {
+        this.experimentNumber = experimentNumber;
+        return this;
+    }    
+    
 }

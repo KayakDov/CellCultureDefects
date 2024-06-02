@@ -135,6 +135,14 @@ public class Angle {
     }
     
     /**
+     * The sum of an angle and a scalar in radians.
+     * @param radians A scalar in radians.
+     * @return An angle.
+     */
+    public Angle plus(double radians){
+        return new Angle(rad() + radians);
+    }
+    /**
      *
      */
     public static Angle NaN = new Angle(Double.NaN);

@@ -76,7 +76,7 @@ public class DefaultWriter extends FormatedFileWriter {
         }
         
         public String apply(PairedSnDef sdp) {
-            return prefix + (charge?sdp.pos:sdp.neg).getID() + "";
+            return prefix + (charge?sdp.pos:sdp.neg).getId() + "";
         }
 
         /**

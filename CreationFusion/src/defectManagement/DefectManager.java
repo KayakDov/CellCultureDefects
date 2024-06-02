@@ -117,8 +117,8 @@ public class DefectManager {
                 while ((sd = reader.readSnap()) != null) {
                     if (sd.isTracked()) {
                         if (sd.getCharge())
-                            maxPosID = Math.max(sd.getID(), maxPosID);
-                        else maxNegID = Math.max(sd.getID(), maxNegID);
+                            maxPosID = Math.max(sd.getId(), maxPosID);
+                        else maxNegID = Math.max(sd.getId(), maxNegID);
                     }
                     frameCount = Math.max(frameCount, sd.getTime());
                 }
@@ -165,9 +165,9 @@ public class DefectManager {
 
         snaps().parallel().filter(snap -> snap.isTracked()).forEach(snap -> {
             if (snap.getCharge())
-                posMaps[snap.getTime()].put(snap.getID(), (PosSnapDefect) snap);
+                posMaps[snap.getTime()].put(snap.getId(), (PosSnapDefect) snap);
             else
-                negMaps[snap.getTime()].put(snap.getID(), (NegSnapDefect) snap);
+                negMaps[snap.getTime()].put(snap.getId(), (NegSnapDefect) snap);
         });
 
         Arrays.setAll(frames, i -> new Frame(posMaps[i], negMaps[i], i));
@@ -222,7 +222,7 @@ public class DefectManager {
 
         return IntStream.range(0, defects(charge).size())
                 .allMatch(i -> defects(charge).get(i) != null
-                && i == defects(charge).get(i).getID());
+                && i == defects(charge).get(i).getId());
     }
 
     /**
@@ -290,9 +290,9 @@ public class DefectManager {
         ArrayList<Integer> orderOfAppearence = new ArrayList<>(defects(charge).size());
 
         negSnaps().forEach(sd -> {
-            if (sd.isTracked() && !defects.contains(sd.getID())) {
-                defects.add(sd.getID());
-                orderOfAppearence.add(sd.getID());
+            if (sd.isTracked() && !defects.contains(sd.getId())) {
+                defects.add(sd.getId());
+                orderOfAppearence.add(sd.getId());
             }
         });
 

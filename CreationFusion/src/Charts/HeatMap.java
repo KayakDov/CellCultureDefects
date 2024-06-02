@@ -182,8 +182,8 @@ private static LookupPaintScale createPaintScale(double[] zValues) {
 
         IntStream.range(0, xRes * yRes).parallel().forEach(i -> {
 
-            x[i] = region.x + (i % xRes) * dx;
-            y[i] = region.y + (i / yRes) * dy;
+            x[i] = region.getX() + (i % xRes) * dx;
+            y[i] = region.getY() + (i / yRes) * dy;
             z[i] = data.stream()
                     .filter(vec -> new Vec(x[i], y[i]).dist(vec, xMod, yMod) < r)
                     .count();

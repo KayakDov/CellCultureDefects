@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 /**
  * @author E. Dov Neimand Specifications for file structure.
  */
-public class ReadManager extends SpreadsheetManager {
+public class ReadManager extends SpreadsheetReadManager {
 
     /**
      * An instance with the default file specs.
@@ -221,7 +221,7 @@ public class ReadManager extends SpreadsheetManager {
      * A buffered reader for the file. This reader will skip lines outside the
      * window, and can go back one line, but never further.
      */
-    public class Reader extends SpreadsheetManager.Reader {
+    public class Reader extends SpreadsheetReadManager.Reader {
 
         public Reader() throws FileNotFoundException {
             super();
