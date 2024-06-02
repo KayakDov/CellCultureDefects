@@ -20,17 +20,56 @@ public class SpreadsheetReadManager {
 
     private final HashMap<String, Integer> colIndex;
     protected final char delimiter;
-    private final File file;
+    private final File readFrom;
 
     /**
      * The index of the requested column.
+     *
      * @param colName The name of the column for whom the index is desired.
      * @return The index of the requested column.
      */
-    protected int indexOf(String colName){
+    protected int indexOf(String colName) {
         return colIndex.get(colName);
     }
-    
+
+    /**
+     * Does this spreadsheet have the requested column.
+     *
+     * @param colName The name of the column being checked.
+     * @return True if the spreadsheet has the column, false otherwise.
+     */
+    protected boolean hasColumn(String colName) {
+        return colIndex.containsKey(colName);
+    }
+
+    protected void expectedColumns(String... colNames) {
+        String error = "";
+        for (String name : colNames)
+            error += columnCheck(name);
+
+        if (!error.equals("")) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(readFrom))) {
+                String firstLine = reader.readLine();
+                throw new RuntimeException(error
+                        + "The file is not formated as expected.\n"
+                        + "Please verify that you are reading the correct file.\n"
+                        + "The file you are reading is called " + readFrom.toString() + ".\n"
+                        + "The first line is: " + firstLine);
+            } catch (IOException ex) {
+                Logger.getLogger(ReadManager.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+    }
+
+    /**
+     * Checks to see if the column is present. If it is not, an error message is
+     * returned.
+     */
+    private String columnCheck(String colName) {
+        return hasColumn(colName) ? "" : "The spreadSheed does not have a " + colName + " column.\n";
+    }
+
     /**
      * A buffered reader for the file.
      */
@@ -42,7 +81,7 @@ public class SpreadsheetReadManager {
          * @throws FileNotFoundException
          */
         public Reader() throws FileNotFoundException {
-            super(new FileReader(file));
+            super(new FileReader(readFrom));
             try {
                 readLine();
             } catch (IOException ex) {
@@ -96,15 +135,15 @@ public class SpreadsheetReadManager {
     /**
      * The constructor.
      *
-     * @param fileName
+     * @param readFrom
      * @param delimiter The file delimiter.
      */
-    public SpreadsheetReadManager(String fileName, char delimiter) {
+    public SpreadsheetReadManager(File readFrom, char delimiter) {
 
         this.delimiter = delimiter;
-        file = new File(fileName);
-        
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+        this.readFrom = readFrom;
+
+        try (BufferedReader br = new BufferedReader(new FileReader(readFrom))) {
 
             String[] firstLine = br.readLine().split("" + delimiter);
             colIndex = new HashMap<>(firstLine.length);
@@ -119,10 +158,19 @@ public class SpreadsheetReadManager {
     /**
      * Creates a reader with a default delimiter of ','.
      *
-     * @param fileName The name of the file.
+     * @param readFrom The name of the file.
      */
-    public SpreadsheetReadManager(String fileName){
-        this(fileName, ',');
+    public SpreadsheetReadManager(File readFrom) {
+        this(readFrom, ',');
+    }
+
+    /**
+     * Creates a reader with a default delimiter of ','.
+     *
+     * @param readFrom The name of the file.
+     */
+    public SpreadsheetReadManager(String readFrom) {
+        this(new File(readFrom), ',');
     }
 
     /**
@@ -143,18 +191,17 @@ public class SpreadsheetReadManager {
         int end = row.indexOf(delimiter, start);
         if (end == -1) end = row.length();
 
-        
-        
         return row.substring(start, end);
     }
-    
+
     /**
      * Finds the desired column in the given row.
+     *
      * @param row The row.
      * @param colName The column desired.
      * @return The cell at the given row and column.
      */
-    protected String getCol(String row, String colName){
+    protected String getCol(String row, String colName) {
         return getCol(row, indexOf(colName));
     }
 
@@ -175,7 +222,7 @@ public class SpreadsheetReadManager {
      */
     public Stream<String> lines() {
         try {
-            return Files.lines(file.toPath()).skip(1);
+            return Files.lines(readFrom.toPath()).skip(1);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -199,10 +246,4 @@ public class SpreadsheetReadManager {
         }
     }
 
-    public static void main(String[] args) throws FileNotFoundException, IOException {
-        SpreadsheetReadManager ssr = new SpreadsheetReadManager("SampleDataSet.csv");
-
-//        while ((id = ssr.readLine("TRACK_ID")) != null)
-        ssr.lines("TRACK_ID").forEach(id -> System.out.println(id));
-    }
 }

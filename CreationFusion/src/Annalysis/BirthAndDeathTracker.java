@@ -6,7 +6,7 @@ import Charts.Histogram;
 import Charts.LineChart;
 import Charts.NamedData;
 import Charts.ScatterPlot;
-import GeometricTools.OpenSpaceTimeBall;
+import GeometricTools.ProximityMetric;
 import GeometricTools.Vec;
 import SnapManagement.PairSnDef;
 import defectManagement.DefectManager;
@@ -132,7 +132,7 @@ public class BirthAndDeathTracker {
      * @param generalProximity A distance for which paired annihilation might be possible.
      * @param deathProximity Definition of near for considering annihilations to be paired.
      */
-    public void percentMergeAtPhase(double generalProximity, OpenSpaceTimeBall deathProximity) {
+    public void percentMergeAtPhase(double generalProximity, ProximityMetric deathProximity) {
         
         Map<Double, List<PairSnDef>> nearCollsionsAtPhase
                 = dm.nearCollsionsSnPairs(generalProximity)

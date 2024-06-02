@@ -2,6 +2,7 @@ package ReadWrite;
 
 import SnapManagement.PairSnDef;
 import SnapManagement.PairedSnDef;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
@@ -35,10 +36,14 @@ public class PairReadManager extends SpreadsheetReadManager {
      * @param negAng The angle of the negative defect (first of 3 columns)
      * @param fuseUp Is the angle fuse up?
      * @param isBirth Is this a creation or a fusion
+     * @param posVelAng The angle the positive defect is moving in.
      * @param fileName The name of the file
      * @param delimiter The delimiter for the file.
      */
-    public PairReadManager(String frame, String posID, String posX, String posY, String posAng, String negID, String negX, String negY, String negAng, String fuseUp, String isBirth, String posVelAng, String fileName, char delimiter) {
+    public PairReadManager(String frame, String posID, String posX, String posY, 
+            String posAng, String negID, String negX, String negY, String negAng, 
+            String fuseUp, String isBirth, String posVelAng, File fileName, 
+            char delimiter){
         super(fileName, delimiter);
         this.frame = frame;
         this.posID = posID;
@@ -52,6 +57,7 @@ public class PairReadManager extends SpreadsheetReadManager {
         this.fuseUp = fuseUp;
         this.posVelAng = posVelAng;
         this.isBirth = isBirth;
+        expectedColumns(frame, posID, posX,posY, posAng, negID, negX, negY, negAng, fuseUp, posVelAng, isBirth);
     }
 
     /**
@@ -74,10 +80,10 @@ public class PairReadManager extends SpreadsheetReadManager {
                 "fuse_up",
                 "p_vel_angle",
                 "creation",
-                fileName,
+                new File(fileName),
                 ',');
     }
-
+    
     /**
      * All the pairs of the two defects at the given line.
      *

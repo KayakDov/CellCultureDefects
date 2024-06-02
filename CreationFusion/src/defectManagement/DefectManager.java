@@ -2,7 +2,7 @@ package defectManagement;
 
 import Charts.NamedData;
 import GeometricTools.Rectangle;
-import GeometricTools.OpenSpaceTimeBall;
+import GeometricTools.ProximityMetric;
 import GeometricTools.Vec;
 import ReadWrite.FormatedFileWriter;
 import snapDefects.SpaceTemp;
@@ -65,6 +65,7 @@ public class DefectManager {
         this.negDefects = toCopy.negDefects;
     }
 
+    
     /**
      * Constructs a DefectManager with the specified file name.
      *
@@ -75,7 +76,7 @@ public class DefectManager {
      * @param timeToEdge The time an event must be from the beginning or end of
      * time.
      */
-    public DefectManager(ReadManager readManager, Rectangle window, OpenSpaceTimeBall ball, int timeToEdge) {
+    public DefectManager(ReadManager readManager, Rectangle window, ProximityMetric ball, int timeToEdge) {
 
         MaxFileValues mfv = new MaxFileValues(readManager);
 
@@ -90,7 +91,7 @@ public class DefectManager {
         all().parallel().forEach(def -> def.setVelocities());
 
         Stream.of(BIRTH, DEATH).parallel().forEach(event -> {
-            all().forEach(def -> def.setEligable(event, !nearEdge(def, window, timeToEdge, event)));
+            all().parallel().forEach(def -> def.setEligable(event, !nearEdge(def, window, timeToEdge, event)));
             pairDefects(window, ball, timeToEdge, event);
         });
 
@@ -377,7 +378,7 @@ public class DefectManager {
      * @param timeToEdge The amount of time that is considered near the edge.
      * @param isBirth Set true to pair births and false to pair annihilations.
      */
-    public final void pairDefects(Rectangle window, OpenSpaceTimeBall ball, int timeToEdge, boolean isBirth) {
+    public final void pairDefects(Rectangle window, ProximityMetric ball, int timeToEdge, boolean isBirth) {
         clearPairing(isBirth);
 
         Set<NegDefect>[] eventDays = eventDays(isBirth);
@@ -497,7 +498,7 @@ public class DefectManager {
      * @param isBirth True if a twin is sought, false for a spouse.
      * @return The nearest pair if one exists within the given proximity.
      */
-    public NegDefect getPair(PosDefect lonely, Set<NegDefect>[] singles, Rectangle window, OpenSpaceTimeBall ball, int timeToEdge, final boolean isBirth) {
+    public NegDefect getPair(PosDefect lonely, Set<NegDefect>[] singles, Rectangle window, ProximityMetric ball, int timeToEdge, final boolean isBirth) {
 
         int centTime = lonely.get(isBirth).getTime();
         NegDefect closest = IntStream.range(
@@ -696,6 +697,7 @@ public class DefectManager {
                 / negatives().filter(neg -> neg.aliveAt(time)).count();
     }
 
+    
     /**
      * A defect manager for all the files in the proffered folder.
      *
@@ -704,13 +706,25 @@ public class DefectManager {
      * @param ball A definition of proximity.
      * @param timeToEdge Proximity to the end and beginning of time.
      */
-    public DefectManager(String parentFolder, Rectangle rect, OpenSpaceTimeBall ball, int timeToEdge) {
+    public DefectManager(String parentFolder, Rectangle rect, ProximityMetric ball, int timeToEdge) {
+        this(new File(parentFolder), rect, ball, timeToEdge);
+    }
+    
+    /**
+     * A defect manager for all the files in the proffered folder.
+     *
+     * @param parentFolder The folder containing the input data files.
+     * @param rect The containing window.
+     * @param ball A definition of proximity.
+     * @param timeToEdge Proximity to the end and beginning of time.
+     */
+    public DefectManager(File parentFolder, Rectangle rect, ProximityMetric ball, int timeToEdge) {
         this();
-        String[] files = Arrays.stream(new File(parentFolder).list()).map(str -> parentFolder + "//" + str).toArray(String[]::new);
+        var files = parentFolder.listFiles();
 
-        for (String fileName : files) {
+        for (File file : files) {
             DefectManager dm = new DefectManager(
-                    ReadManager.defaultFileFormat(fileName),
+                    ReadManager.defaultFileFormat(file),
                     rect,
                     ball,
                     timeToEdge

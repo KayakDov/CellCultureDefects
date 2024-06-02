@@ -21,12 +21,23 @@ public class ReadManager extends SpreadsheetReadManager {
     /**
      * An instance with the default file specs.
      *
-     * @param fileName The name of the file with default column headers.
+     * @param readFrom The name of the file with default column headers.
      *
      * @return A File format with default column names.
      */
-    public static ReadManager defaultFileFormat(String fileName) {
-        return new ReadManager("x_img", "y_img", "TRACK_ID", "POSITION_T", "charge", "ang1", ',', fileName);
+    public static ReadManager defaultFileFormat(File readFrom) {
+        return new ReadManager("x_img", "y_img", "TRACK_ID", "POSITION_T", "charge", "ang1", ',', readFrom);
+    }
+
+    /**
+     * An instance with the default file specs.
+     *
+     * @param readFrom The name of the file with default column headers.
+     *
+     * @return A File format with default column names.
+     */
+    public static ReadManager defaultFileFormat(String readFrom) {
+        return defaultFileFormat(new File(readFrom));
     }
 
     /**
@@ -63,18 +74,26 @@ public class ReadManager extends SpreadsheetReadManager {
      * @param angle The name of the first angle column.
      * @param charge The name of the charge column.
      * @param delimiter The delimiter that separates values.
-     * @param fileName The name of a file whose first line has the column names
+     * @param readFrom The name of a file whose first line has the column names
      * on it.
      */
-    public ReadManager(String x, String y, String id, String time, String charge, String angle, char delimiter, String fileName) {
-        super(fileName, delimiter);
+    public ReadManager(String x, String y, String id, String time, String charge, String angle, char delimiter, File readFrom) {
+        super(readFrom, delimiter);
+
         this.x = x;
+
         this.y = y;
+
         this.id = id;
+
         this.time = time;
+
         this.charge = charge;
+
         this.angle = angle;
-     
+        
+        expectedColumns(x, y, id, time, charge, angle);
+
     }
 
     /**
@@ -83,8 +102,8 @@ public class ReadManager extends SpreadsheetReadManager {
      * @return The number of frames in the file.
      */
     public int numFrames() {
-        
-        try(Reader reader = getReader()){
+
+        try (Reader reader = getReader()) {
             int numFrames = 0;
             String nextLine;
             while ((nextLine = reader.readLine()) != null)
@@ -97,8 +116,9 @@ public class ReadManager extends SpreadsheetReadManager {
     }
 
     /**
-     * Gets a file reader for a file with this default arrangement.
-     * Don't forget to close the reader when you're done with it.
+     * Gets a file reader for a file with this default arrangement. Don't forget
+     * to close the reader when you're done with it.
+     *
      * @return A file reader.
      */
     @Override
@@ -190,7 +210,7 @@ public class ReadManager extends SpreadsheetReadManager {
      * @return The value at the given index in the formatted line.
      */
     private double doubleAt(String str, String colName) {
-        
+
         String subStr = super.getCol(str, colName);
         if (subStr.isEmpty()) return Double.NaN;
         return Double.parseDouble(subStr);
@@ -206,7 +226,6 @@ public class ReadManager extends SpreadsheetReadManager {
         return (int) doubleAt(string, time);
 
     }
-
 
     /**
      * All the snap defects in the file.

@@ -1,9 +1,10 @@
 package main;
 
 import GeometricTools.Rectangle;
-import GeometricTools.OpenSpaceTimeBall;
+import GeometricTools.ProximityMetric;
 import ReadWrite.ReadManager;
 import defectManagement.DefectManager;
+import java.io.File;
 
 /**
  * Some default data sets.
@@ -13,7 +14,7 @@ import defectManagement.DefectManager;
 public class DefaultData {
 
     private static final Rectangle cellWindow = new Rectangle(0, 0, 2050, 2050, 80);
-    private static final OpenSpaceTimeBall cellProximity = new OpenSpaceTimeBall(2, 40);
+    private static final ProximityMetric cellProximity = new ProximityMetric(40, 2);
 
     public static DefectManager Cells_1_10_11_12() {
 
@@ -36,7 +37,7 @@ public class DefaultData {
     public static DefectManager bacteria(int time, double dist, double distFromEdge, int timeFromEdge) {
 
         final Rectangle defaultBacteriaDimensions = new Rectangle(900, 0, 900, 900, distFromEdge);
-        final OpenSpaceTimeBall defaultProximity = new OpenSpaceTimeBall(time, dist);
+        final ProximityMetric defaultProximity = new ProximityMetric(dist, time);
 
         return new DefectManager(
                 ReadManager.defaultFileFormat("PlusAndMinusTM6.csv"),
@@ -62,7 +63,7 @@ public class DefaultData {
         return new DefectManager(
                 ReadManager.defaultFileFormat("SampleDataSet.csv"), 
                 new Rectangle(0, 0, 10, 10, 0), 
-                new OpenSpaceTimeBall(1, 2), 
+                new ProximityMetric(2, 1), 
                 0                
         ).setName("sample data set");
     }    

@@ -1,7 +1,7 @@
 package SnapManagement;
 
 import GeometricTools.Angle;
-import GeometricTools.OpenSpaceTimeBall;
+import GeometricTools.ProximityMetric;
 import GeometricTools.Vec;
 import defectManagement.DefectManager;
 import java.util.Arrays;
@@ -179,7 +179,7 @@ public class PairSnDef {
      * @return True if the they are born (for birth == true) or die 
      * (for birth == false) together.
      */
-    public boolean shareEvent(OpenSpaceTimeBall proximity, DefectManager dm, boolean birth){
+    public boolean shareEvent(ProximityMetric proximity, DefectManager dm, boolean birth){
         return proximity.near(posDef(dm).get(birth), dm.getDefect(neg).get(birth));
     }
     

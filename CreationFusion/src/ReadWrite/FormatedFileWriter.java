@@ -3,6 +3,7 @@ package ReadWrite;
 import GeometricTools.Vec;
 import SnapManagement.PairedSnDef;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
@@ -26,11 +27,11 @@ public class FormatedFileWriter extends BufferedWriter {
      *
      * @param delimiter What goes between the columns.
      * @param cols The columns that will be written.
-     * @param fileName The name of the file to write to.
+     * @param writeTo The name of the file to write to.
      * @throws java.io.IOException
      */
-    public FormatedFileWriter(String fileName, char delimiter, Column... cols) throws IOException {
-        super(new FileWriter(fileName));
+    public FormatedFileWriter(File writeTo, char delimiter, Column... cols) throws IOException {
+        super(new FileWriter(writeTo));
         this.delimiter = delimiter;
         this.cols = cols;
         String firstLine = Arrays.stream(cols)

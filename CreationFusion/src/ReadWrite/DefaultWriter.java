@@ -3,6 +3,7 @@ package ReadWrite;
 import GeometricTools.Vec;
 import SnapManagement.PairedSnDef;
 import defectManagement.DefectManager;
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -13,9 +14,23 @@ import java.util.Arrays;
  */
 public class DefaultWriter extends FormatedFileWriter {
 
-    public DefaultWriter(String fileName) throws IOException {
+    /**
+     * A constructor
+     * @param writeTo The name of the file to write to.
+     * @throws IOException 
+     */
+    public DefaultWriter(String writeTo) throws IOException {
+        this(new File(writeTo));
+    }
+    
+    /**
+     * The constructor.
+     * @param writeTo The name of the file to write to.
+     * @throws IOException 
+     */
+    public DefaultWriter(File writeTo) throws IOException {
         super(
-                fileName, ',',
+                writeTo, ',',
                 frame, //0
                 posID, //1
                 posX, //2
