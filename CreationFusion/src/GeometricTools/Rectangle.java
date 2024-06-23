@@ -87,7 +87,7 @@ public class Rectangle {
      * @return True if vec is near the edge, false otherwise.
      */
     public boolean nearEdge(Vec vec){
-        return vec.getX() < getX() + nearEdge || vec.getX() > getY() + width - nearEdge ||
+        return vec.getX() < getX() + nearEdge || vec.getX() > getX() + width - nearEdge ||
                 vec.getY()<getY() + nearEdge || vec.getY() > getY() + height - nearEdge;
     }
     

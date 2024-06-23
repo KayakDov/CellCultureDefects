@@ -40,11 +40,12 @@ public class DefectManager {
      *
      * @param other The other defect manager.
      */
-    public final void mergeIn(DefectManager other) {
+    public final DefectManager mergeIn(DefectManager other) {
 
         posDefects.mergeIn(other.posDefects);
         negDefects.mergeIn(other.negDefects);
         numFrames = Math.max(numFrames, other.numFrames);
+        return this;
     }
 
     /**
@@ -86,12 +87,14 @@ public class DefectManager {
 
         readManager.snapDefects().parallel()
                 .filter(snap -> snap.isTracked())
+                .filter(snap -> window.contains(snap.loc))
                 .forEach(snap -> defects(snap.getCharge()).add(snap));
 
         all().parallel().forEach(def -> def.setVelocities());
 
         Stream.of(BIRTH, DEATH).parallel().forEach(event -> {
             all().parallel().forEach(def -> def.setEligable(event, !nearEdge(def, window, timeToEdge, event)));
+            
             pairDefects(window, ball, timeToEdge, event);
         });
 
@@ -340,14 +343,14 @@ public class DefectManager {
      * @param def A defect whose birth or death will be checked for proximity to
      * the spacial and temporal edges.
      * @param window The window containing all defects.
-     * @param birth A birth can be near the end of time, but not the beginning,
+     * @param isBirth A birth can be near the end of time, but not the beginning,
      * and vice versa for deaths.
      * @param timeToEdge Must be further away from the end and beginning of
      * time.
      * @return True if the snap Defect is near the edge, false otherwise.
      */
-    public boolean nearEdge(Defect def, Rectangle window, int timeToEdge, boolean birth) {
-        SpaceTemp spaceTemp = def.get(birth);
+    public boolean nearEdge(Defect def, Rectangle window, int timeToEdge, boolean isBirth) {
+        SpaceTemp spaceTemp = def.get(isBirth);
         return window.nearEdge(spaceTemp)
                 || spaceTemp.getTime() < timeToEdge
                 || spaceTemp.getTime() > numFrames - timeToEdge;

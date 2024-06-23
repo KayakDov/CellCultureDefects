@@ -3,9 +3,6 @@ package main;
 import Animation.DrawDefects;
 import ReadWrite.SpreadsheetReadManager;
 import Annalysis.BirthAndDeathTracker;
-import snapDefects.SpaceTemp;
-import GeometricTools.Rectangle;
-import GeometricTools.ProximityMetric;
 import ReadWrite.DefaultWriter;
 import ReadWrite.FormatedFileWriter;
 import ReadWrite.PairReadManager;
@@ -14,9 +11,7 @@ import SnapManagement.PairSnDef;
 import defectManagement.DefectManager;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  *
@@ -69,7 +64,7 @@ public class Main {
                 dm.writePairesToFile(writer);
             }
 
-            checkOutputFile(ap.writeTo);
+//            checkOutputFile(ap.writeTo);
         }
     }
 
@@ -91,14 +86,14 @@ public class Main {
      */
     public static void defaults() throws IOException {
 
-        DefectManager dm = DefaultData.bacteria();//(time, dist);
-        BirthAndDeathTracker ct = new BirthAndDeathTracker(dm);
-//        ct.angleNearFusion(DefectManager.BIRTH, 20);
-        ct.distanceOfFrame(1000, 0);
-
-        try (FormatedFileWriter ffw = new DefaultWriter("BacteriaPairs.csv")) {
-            dm.writePairesToFile(ffw);
-        }
+        DefectManager dm = DefaultData.allCells_1_10_11_12_14_15_19();//(time, dist);
+        
+        new BirthAndDeathTracker(dm).longevity(100, 1, x -> 1800/x);
+        
+        
+//        try (FormatedFileWriter ffw = new DefaultWriter("BacteriaPairs.csv")) {
+//            dm.writePairesToFile(ffw);
+//        }
 
     }
 
@@ -108,9 +103,9 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
 
-//        testImageCreation();
-//        defaults();
-        parseArgs(ArgumentProcessor.defaultBacteriaArgs());
+
+        defaults();
+//        parseArgs(ArgumentProcessor.defaultBacteriaArgs());
 //        parseArgs(args);
     }
 

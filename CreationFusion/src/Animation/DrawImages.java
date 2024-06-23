@@ -1,16 +1,11 @@
 package Animation;
 
-import GeometricTools.Angle;
-
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.function.IntToDoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.IntStream;
 import javax.imageio.ImageIO;
 
 /**

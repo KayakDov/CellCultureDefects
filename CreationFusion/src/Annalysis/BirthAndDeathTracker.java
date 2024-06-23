@@ -13,6 +13,7 @@ import defectManagement.DefectManager;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.math3.util.Precision;
@@ -196,4 +197,12 @@ public class BirthAndDeathTracker {
                 LineChart.factory("Distance Evolution Between Defect Pairs: " + dm.getName(), "Frame", "Distance", ann, creation);
 
     }
+    
+    public void longevity(int numBins, double secondPerFrame, DoubleUnaryOperator f){
+        
+        double[] lifeLengths = dm.all().mapToDouble(def -> def.age()*secondPerFrame).toArray();
+        
+        Histogram.factory(lifeLengths, numBins, "Defect Longevity " + dm.getName(), "time", f);
+    }
+    
 }

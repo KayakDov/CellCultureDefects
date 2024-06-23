@@ -16,14 +16,19 @@ public class DefaultData {
     private static final Rectangle cellWindow = new Rectangle(0, 0, 2050, 2050, 80);
     private static final ProximityMetric cellProximity = new ProximityMetric(40, 2);
 
-    public static DefectManager Cells_1_10_11_12() {
+    public static DefectManager cells_1_10_11_12() {
 
         return new DefectManager("plusMinusTMs//1_10_11_12", cellWindow, cellProximity, cellProximity.rTime * 2).setName("cells_1_10_11_12");
     }
 
-    public static DefectManager Cells_14_15_19() {
+    public static DefectManager cells_14_15_19() {
         return new DefectManager("plusMinusTMs//14_15_19", cellWindow, cellProximity, cellProximity.rTime * 2).setName("cells_14_15_19");
     }
+    
+    public static DefectManager allCells_1_10_11_12_14_15_19() {
+        return cells_1_10_11_12().mergeIn(cells_14_15_19()).setName("Cells");
+    }
+    
 
     /**
      * The bacteria data set
@@ -52,7 +57,7 @@ public class DefaultData {
      * @return The bacteria data set.
      */
     public static DefectManager bacteria() {
-        return bacteria(2, 30, 30, 2);
+        return bacteria(2, 12, 30, 2);
     }
     
     /**
