@@ -17,6 +17,7 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.math3.util.Precision;
+import snapDefects.NegSnapDefect;
 
 /**
  *
@@ -198,6 +199,12 @@ public class BirthAndDeathTracker {
 
     }
     
+    /**
+     * The longevity of the defects.
+     * @param numBins The number of bins in the histogram.
+     * @param secondPerFrame The number of seconds per frame.
+     * @param f A graph to superimpose on the histogram.
+     */
     public void longevity(int numBins, double secondPerFrame, DoubleUnaryOperator f){
         
         double[] lifeLengths = dm.all().mapToDouble(def -> def.age()*secondPerFrame).toArray();
@@ -205,4 +212,16 @@ public class BirthAndDeathTracker {
         Histogram.factory(lifeLengths, numBins, "Defect Longevity " + dm.getName(), "time", f);
     }
     
+    /**
+     * The tail differences at the time of death.
+     * @param numBins The number of bins.
+     */
+    public void negTailAngleAtDeath(int numBins){
+        double[] minTailAngles = dm.negatives().mapToDouble(def -> ((NegSnapDefect)def.getDeath()).minTailDifference().rad()).toArray();
+
+        Histogram.factory(minTailAngles, numBins, "Shortest distance between tails at annihilation. " + dm.getName(), "tail differences");
+        
+        minTailAngles = dm.snaps(DefectManager.NEG).filter(snap -> snap != null).mapToDouble(snap -> ((NegSnapDefect)snap).minTailDifference().rad()).toArray();
+        Histogram.factory(minTailAngles, numBins, "Shortest distance between tails for all snap defects. " + dm.getName(), "tail differences");
+    }
 }

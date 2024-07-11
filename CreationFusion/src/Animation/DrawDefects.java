@@ -1,137 +1,224 @@
 package Animation;
 
-import GeometricTools.Angle;
+import GeometricTools.LineSegment;
 import GeometricTools.Rectangle;
 import GeometricTools.Vec;
 import SnapManagement.PairSnDef;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.function.ToDoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.DoubleStream;
+import java.util.stream.Stream;
 import javax.imageio.ImageIO;
-import javax.swing.Spring;
-import snapDefects.NegSnapDefect;
-import snapDefects.PosSnapDefect;
+import org.apache.commons.imaging.Imaging;
 import snapDefects.SnapDefect;
 
 /**
- * A Draw images class that is specific for defects.
- *
- * @author E. Dov Neimand
+ * The DrawDefects class is responsible for creating a combined image from two
+ * given images by placing them at specified positions and rotating them to
+ * specified angles.
  */
-public class DrawDefects extends DrawImages {
+public class DrawDefects {
 
-    /**
-     * How much distance one pixel covers.
-     */
-    private final double scale;
-
-    /**
-     * The x and y coordinates of the top left corner of the window.
-     */
-    private final Rectangle windowInData;
+    private final int diameter;
+    private final Rectangle frame;
 
     /**
      * The constructor.
      *
-     * @param posDefImgPath The path to a positive defect image.
-     * @param negDefImgPath The path to a negative defect image.
-     * @param fromDim This is the smallest rectangle that contains the area of interest in the data.
-     * @param toDim These are the dimensions of the picture on the screen.
-     *
+     * @param width The width of the window
+     * @param height The height of the window.
+     * @param diameter The diameter of the image
      */
-    public DrawDefects(String posDefImgPath, String negDefImgPath, Rectangle fromDim, Vec toDim) {
-        super((int)toDim.getX(), (int)toDim.getY(), posDefImgPath, negDefImgPath);
-        this.scale = Math.min(toDim.getY()/fromDim.height, toDim.getX()/fromDim.width);
-        this.windowInData = fromDim;
+    public DrawDefects(int width, int height, int diameter) {
+        frame = new Rectangle(0, 0, width, height);
+        this.diameter = diameter;
     }
 
     /**
-     * Draws the defects of a pair
+     * Draws the images to a file, ensuring they are scaled to fit within the
+     * frame.
      *
-     * @param outputPath The file to draw to.
-     * @param pair The pair of defects to be drawn.
+     * @param outputPath The file path where the combined image will be saved.
+     *
+     * @param background To be placed behind the
+     * @param images The images to be drawn.
      */
-    public void draw(String outputPath, PairSnDef pair) {
-
-        Stamp neg = new Stamp(
-                pair.neg.loc.minus(windowInData.minCorner).mult(scale),
-                pair.neg.tailAngle()[0].mult(-1)
-        );
-
-        Stamp pos = new Stamp(
-                pair.pos.loc.minus(windowInData.minCorner).mult(scale),
-                pair.pos.tailAngle().mult(-1)
-        );
-
-        draw(outputPath, neg, pos);
+    public void draw(File outputPath, File background, DefectImage... images) {
+        draw(outputPath, background, new Rectangle(Arrays.stream(images).map(img -> img.embedTo), diameter), images);
     }
 
     /**
-     * Finds the extremes values in the given dimension of the list.
-     * @param pairs Thae pairs for which an extreme point is desired.
-     * @param val A dimension choosing function, either p-> p.x or p->p.y.
-     * @param isMax True if the maximum is desired, false if the minimum is desired.
-     * @return The maximum or minimum in the given dimension.
+     * Draws the images to a file, ensuring they are scaled to fit within the
+     * frame.
+     *
+     * @param outputPath The file path where the combined image will be saved.
+     * @param window The window the defects are coming from. Set this to null
+     * and the method will find its own window.
+     * @param images The images to be drawn.
      */
-    private static double extreme(List<PairSnDef> pairs, ToDoubleFunction<Vec> val, boolean isMax) {
-        DoubleStream doubles = pairs.stream()
-                .mapToDouble(pair -> {
-                    double a = val.applyAsDouble(pair.pos.loc) + (isMax ? 1 : -1);
-                    double b = val.applyAsDouble(pair.neg.loc) + (isMax ? 1 : -1);
-                    return isMax ? Math.max(a, b) : Math.min(a, b);
-                });
-        return (isMax ? doubles.max() : doubles.min()).getAsDouble();
+    public void draw(File outputPath, Rectangle window, DefectImage... images) {
+        draw(outputPath, null, window, images);
     }
 
     /**
-     * Creates a sequence of images in the selected folder.
+     * Crops a section of the given image file and fits it to frame.
      *
-     * @param posPath The path to a picture of a positive defect.pairs@param
-     * negPath The path to a picture of a negative defect.
-     * @param negPath The path to the picture of the negative defect.
-     * @param writeToFolder The folder to put the new pictures in.
-     * @param pairs The defects to be put in the picture.
+     * @param picture The picture to be cropped and fit.
+     * @param window The crop borders.
+     * @return A buffered image the size of frame.
      */
-    public static void draw(String posPath, String negPath, String writeToFolder, List<PairSnDef> pairs) {
-
-        try {
-            BufferedImage posImg = ImageIO.read(new File(posPath));
-            BufferedImage negImg = ImageIO.read(new File(negPath));
+    
+    private void setBackground(File img, Rectangle window, Graphics2D g2d) {
+        if (img == null) {
+            g2d.setColor(Color.BLACK);
+            g2d.fillRect(0, 0, (int) frame.width(), (int) frame.height());
             
-            double defImgHeight = Math.max(posImg.getHeight(), negImg.getHeight())/2,
-                    defImgWidth = Math.max(posImg.getWidth(), negImg.getWidth())/2;
-
-            double x = extreme(pairs, p -> p.getX(), false) - defImgWidth,
-                    y = extreme(pairs, p -> p.getY(), false) - defImgHeight,
-                    width = extreme(pairs, p -> p.getX(), true) + defImgWidth - x,
-                    height = extreme(pairs, p -> p.getY(), true) + defImgHeight - y;
-            Rectangle minRect = new Rectangle(x, y, width, height);
-            
-            Vec imgWidthHeight = new Vec(1000, 1000);
-            
-            DrawDefects dd = new DrawDefects(posPath, negPath, minRect, imgWidthHeight);
-
-            pairs.forEach(pair -> dd.draw(writeToFolder + File.pathSeparator + pair.pos.loc.getTime() + "_" + pair.pos.getId() + "_" +pair.neg.getId(), pair));
-            
-        } catch (IOException ex) {
-            Logger.getLogger(DrawDefects.class.getName()).log(Level.SEVERE, null, ex);
+        } else {
+            try {
+                BufferedImage grabFrom = Imaging.getBufferedImage(img).getSubimage(
+                        (int) window.getX(),
+                        (int) window.getY(),
+                        (int) window.width(),
+                        (int) window.height()
+                );
+                
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2d.drawImage(grabFrom, 0, 0, (int) frame.width(), (int) frame.height(), null);
+            } catch (IOException ex) {
+                Logger.getLogger(DrawDefects.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
     
     
-    
-    public static void main(String[] args) {
-        List<PairSnDef> pairs = new ArrayList<>();
-        
-        pairs.add(new PairSnDef(new PosSnapDefect(100, 100, 0, 0, 0), new NegSnapDefect(200, 100, 0, 1, 0, 2*Math.PI/3, 4*Math.PI/3)));
-        draw("images/source/PosDef.png", "images/source/NegDef.png", "images/output/", pairs);
+    /**
+     * Draws the images to a file, ensuring they are scaled to fit within the
+     * frame.
+     *
+     * @param outputPath The file path where the combined image will be saved.
+     * @param window The window the defects are coming from. Set this to null
+     * and the method will find its own window.
+     * @param background To be placed behind the
+     * @param images The images to be drawn.
+     */
+    public void draw(File outputPath, Rectangle window, File background, SnapDefect... images) {
+        draw(outputPath, 
+                background, window, 
+                Arrays.stream(images)
+                        .map(snap -> snap.getImage(diameter))
+                        .toArray(DefectImage[]::new)
+        );
     }
 
+    /**
+     * Draws the images to a file, ensuring they are scaled to fit within the
+     * frame.
+     *
+     * @param outputPath The file path where the combined image will be saved.
+     * @param window The window the defects are coming from. Set this to null
+     * and the method will find its own window.
+     * @param background To be placed behind the
+     * @param images The images to be drawn.
+     */
+    public void draw(File outputPath, File background, Rectangle window, DefectImage... images) {
+        BufferedImage toImg = new BufferedImage((int) frame.width(), (int) frame.height(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = toImg.createGraphics();
+
+        setBackground(background, window, g2d);
+
+        for (DefectImage image : images) {
+            Vec scaled = window.scale(image.embedTo, frame);
+            g2d.drawImage(image, (int) scaled.getX(), (int) scaled.getY(), null);
+        }
+
+        g2d.dispose();
+        try {
+            ImageIO.write(toImg, "png", outputPath);
+        } catch (IOException ex) {
+            Logger.getLogger(DrawDefects.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    /**
+     * Gets the bounds for scaling the image positions using a loop. Ensures
+     * that the entire negative defect is visible.
+     *
+     * @param pairs The images to be drawn.
+     * @param diameter The diameter of the defects.
+     * @return A Rectangle representing the bounds.
+     */
+    private static Rectangle getBounds(List<PairSnDef> pairs, int diameter) {
+
+        Rectangle bounds = new Rectangle(diameter);
+
+        pairs.stream().flatMap(pair -> pair.defects()).forEach(snap -> bounds.expand(snap.loc));
+
+        return bounds;
+
+    }
+
+    /**
+     * Draws the images at their scaled positions on the Graphics2D object.
+     *
+     * @param g2d The Graphics2D object.
+     * @param images The images to be drawn.
+     * @param bounds The bounds for scaling the image positions.
+     * @param scaleX The scaling factor for the x dimension.
+     * @param scaleY The scaling factor for the y dimension.
+     */
+    private void drawImages(Graphics2D g2d, DefectImage[] images, Rectangle bounds, double scaleX, double scaleY) {
+        int r = diameter / 2;
+
+        for (DefectImage image : images) {
+            Vec scaled = bounds.scale(image.embedTo, frame);
+            g2d.drawImage(image, (int) scaled.getX(), (int) scaled.getY(), null);
+        }
+    }
+
+    /**
+     * Saves the BufferedImage to the specified output file path.
+     *
+     * @param outputPath The file path where the image will be saved.
+     * @param image The BufferedImage to be saved.
+     */
+    private void saveImage(File outputPath, BufferedImage image) {
+        try {
+            ImageIO.write(image, "png", outputPath);
+        } catch (IOException ex) {
+            Logger.getLogger(DrawDefects.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    /**
+     * Draws the proffered defects in the folder.
+     *
+     * @param defectDiameter The diameter of the image.
+     * @param frameWidth The width of the pictures.
+     * @param frameHeight The height of the pictures.
+     * @param parentFolder The folder the new pictures will be put in.
+     * @param defectPairs The defect pairs to be drawn.
+     */
+    public static void drawDefectPairs(int defectDiameter, int frameWidth, int frameHeight, File parentFolder, List<PairSnDef> defectPairs) {
+        DrawDefects di = new DrawDefects(frameWidth, frameHeight, defectDiameter);
+
+        Rectangle window = getBounds(defectPairs, defectDiameter);
+
+        defectPairs.forEach(pair -> di.draw(
+                new File(parentFolder + File.separator + pair.pos.getTime() + "_" + pair.pos.getId() + "_" + pair.neg.getId() + ".png"),
+                window,
+                new DefectImage(pair.pos, defectDiameter),
+                new DefectImage(pair.neg, defectDiameter)
+        )
+        );
+    }
+    
+    
+    
 }

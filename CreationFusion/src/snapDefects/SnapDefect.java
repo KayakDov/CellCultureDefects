@@ -1,5 +1,6 @@
 package snapDefects;
 
+import Animation.DefectImage;
 import GeometricTools.Angle;
 import GeometricTools.Vec;
 import SnapManagement.Defect;
@@ -174,4 +175,10 @@ public abstract class SnapDefect implements hasChargeID {
         return this;
     }    
     
+    /**
+     * The image that matches this snap defect.
+     * @param diameter The diameter of the image in the original frame.
+     * @return The picture of the image.
+     */
+    public abstract DefectImage getImage(int diameter);
 }

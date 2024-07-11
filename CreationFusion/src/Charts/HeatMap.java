@@ -173,8 +173,8 @@ private static LookupPaintScale createPaintScale(double[] zValues) {
      */
     private static double[][] heatField(GeometricTools.Rectangle region, int xRes, int yRes, List<Vec> data, double r, double xMod, double yMod) {
 
-        double dx = region.width / xRes;
-        double dy = region.height / yRes;
+        double dx = region.width() / xRes;
+        double dy = region.height() / yRes;
 
         double x[] = new double[xRes * yRes];
         double y[] = new double[xRes * yRes];

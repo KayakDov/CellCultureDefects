@@ -1,5 +1,6 @@
 package snapDefects;
 
+import Animation.DefectImage;
 import GeometricTools.Angle;
 import SnapManagement.Defect;
 import SnapManagement.PosDefect;
@@ -75,6 +76,12 @@ public class PosSnapDefect extends SnapDefect{
     public PosSnapDefect setDefect(Defect defect) {
         super.setDefect(defect);
         return this;
+    }
+    
+    
+    @Override
+    public DefectImage getImage(int diameter) {
+        return new DefectImage(this, diameter);
     }
         
 }

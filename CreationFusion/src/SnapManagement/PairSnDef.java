@@ -180,7 +180,7 @@ public class PairSnDef {
      * (for birth == false) together.
      */
     public boolean shareEvent(ProximityMetric proximity, DefectManager dm, boolean birth){
-        return proximity.near(posDef(dm).get(birth), dm.getDefect(neg).get(birth));
+        return proximity.near(posDef(dm).get(birth).loc, dm.getDefect(neg).get(birth).loc);
     }
     
     /**

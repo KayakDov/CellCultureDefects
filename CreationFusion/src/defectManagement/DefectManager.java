@@ -186,7 +186,7 @@ public class DefectManager {
      * @return All the positive snap defects.
      */
     public Stream<PosSnapDefect> posSnaps() {
-        return positives().flatMap(def -> def.snapDefects());
+        return positives().flatMap(def -> def.snapDefects()).filter(snap -> snap != null);
     }
 
     /**
@@ -195,7 +195,7 @@ public class DefectManager {
      * @return All the negative snap defects.
      */
     public Stream<NegSnapDefect> negSnaps() {
-        return negatives().flatMap(def -> def.snapDefects());
+        return negatives().flatMap(def -> def.snapDefects()).filter(snap -> snap != null);
     }
 
     /**
@@ -208,7 +208,7 @@ public class DefectManager {
     private Stream<PosDefect> eligable(Stream<PosDefect> positives, Rectangle window, int timeToEdge, boolean birth) {
         return positives
                 .filter(pos
-                        -> window.contains(pos.get(birth))
+                        -> window.contains(pos.get(birth).loc)
                 && !nearEdge(pos, window, timeToEdge, birth));
 
     }
@@ -350,7 +350,7 @@ public class DefectManager {
      * @return True if the snap Defect is near the edge, false otherwise.
      */
     public boolean nearEdge(Defect def, Rectangle window, int timeToEdge, boolean isBirth) {
-        SpaceTemp spaceTemp = def.get(isBirth);
+        SpaceTemp spaceTemp = def.get(isBirth).loc;
         return window.nearEdge(spaceTemp)
                 || spaceTemp.getTime() < timeToEdge
                 || spaceTemp.getTime() > numFrames - timeToEdge;
@@ -509,8 +509,8 @@ public class DefectManager {
                 Math.min(centTime + ball.rTime + 1, (int) numFrames)
         ).boxed().flatMap(i -> singles[i].stream())
                 .parallel()
-                .filter(single -> ball.near(single.get(isBirth), lonely.get(isBirth)))
-                .min(Comparator.comparing(single -> single.get(isBirth).dist(lonely.get(isBirth))))
+                .filter(single -> ball.near(single.get(isBirth).loc, lonely.get(isBirth).loc))
+                .min(Comparator.comparing(single -> single.get(isBirth).loc.dist(lonely.get(isBirth).loc)))
                 .orElse(null);
 
         if (closest != null)

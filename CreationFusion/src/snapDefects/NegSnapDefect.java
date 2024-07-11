@@ -1,5 +1,6 @@
 package snapDefects;
 
+import Animation.DefectImage;
 import GeometricTools.Angle;
 import SnapManagement.Defect;
 import SnapManagement.NegDefect;
@@ -65,5 +66,23 @@ public class NegSnapDefect extends SnapDefect{
         return this;
     }
     
-    
+    /**
+     * The minimum distance between the tail angles.
+     * @return The minimum distance between the tail angles.
+     */
+    public Angle minTailDifference(){
+        return new Angle(Math.min(
+                tailAngle()[0].arcDist(tailAngle()[1]), 
+                Math.min(
+                        tailAngle()[0].arcDist(tailAngle()[2]), 
+                        tailAngle()[1].arcDist(tailAngle()[2])
+                ))
+        );
+    }
+
+    @Override
+    public DefectImage getImage(int diameter) {
+        return new DefectImage(this, diameter);
+    }
+
 }

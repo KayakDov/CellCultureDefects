@@ -63,10 +63,10 @@ public class PairReadManager extends SpreadsheetReadManager {
     /**
      * Creates a PairReadManager using the default file format.
      *
-     * @param fileName The name of the file.
+     * @param readFrom The name of the file.
      * @return A default paired read manager.
      */
-    public static PairReadManager defaultFileFormat(String fileName) {
+    public static PairReadManager defaultFileFormat(File readFrom) {
         return new PairReadManager(
                 "FRAME",
                 "plus_id",
@@ -80,7 +80,7 @@ public class PairReadManager extends SpreadsheetReadManager {
                 "fuse_up",
                 "p_vel_angle",
                 "creation",
-                new File(fileName),
+                readFrom,
                 ',');
     }
     
@@ -90,10 +90,10 @@ public class PairReadManager extends SpreadsheetReadManager {
      * @param lineIndex The line of the desired pair set.
      * @return All the pairs that match those at the given line.
      */
-    public List<PairSnDef> pairSetContainingLine(int lineIndex) {
-        String line = lines().skip(lineIndex - 2).findFirst().get();
+    public Stream<PairSnDef> pairSetContainingLine(int lineIndex) {
+        String line = lines().skip(lineIndex - 1).findFirst().get();
         PairSnDef target = fromRow(line);
-        return pairs().filter(pair -> target.samePairDifferentTime(pair)).collect(Collectors.toList());
+        return pairs().filter(pair -> target.samePairDifferentTime(pair));
     }
 
 

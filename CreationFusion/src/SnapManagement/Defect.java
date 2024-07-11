@@ -7,7 +7,6 @@ import snapDefects.SpaceTemp;
 import defectManagement.hasChargeID;
 import java.util.ArrayList;
 import snapDefects.SnapDefect;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -78,8 +77,8 @@ public abstract class Defect implements hasChargeID {
      *
      * @return The birth moment of this defect.
      */
-    public SpaceTemp getBirth() {
-        return path.get(0).loc;
+    public SnapDefect getBirth() {
+        return path.get(0);
     }
 
     /**
@@ -88,7 +87,7 @@ public abstract class Defect implements hasChargeID {
      * @param birth True if the birth is desired, false otherwise.
      * @return If birth is true, then the birth, otherwise the death.
      */
-    public SpaceTemp get(boolean birth) {
+    public SnapDefect get(boolean birth) {
         return birth ? getBirth() : getDeath();
     }
 
@@ -153,8 +152,8 @@ public abstract class Defect implements hasChargeID {
      *
      * @return
      */
-    public SpaceTemp getDeath() {
-        return path.get(path.size() - 1).loc;
+    public SnapDefect getDeath() {
+        return path.get(path.size() - 1);
     }
 
     /**
@@ -362,7 +361,7 @@ public abstract class Defect implements hasChargeID {
      * @return The distance from the place of birth.
      */
     public double displacement(int timeFromBirth) {
-        return getBirth().dist(snapFromEvent(timeFromBirth, DefectManager.BIRTH).loc);
+        return getBirth().loc.dist(snapFromEvent(timeFromBirth, DefectManager.BIRTH).loc);
     }
 
     /**

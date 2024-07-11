@@ -92,7 +92,8 @@ public class Angle {
      * and mod.
      * @param a The distance from a to b modular arithmetic.
      * @param b The distance from a to b modular arithmetic.
-     * @param mod size of the circle.
+     * @param mod size of the circle.  This can be set to infinity for regular 
+     * arithmetic.
      * @return The difference between the two points.
      */
     public static double modDif(double a, double b, double mod){

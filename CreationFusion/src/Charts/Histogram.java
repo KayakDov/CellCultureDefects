@@ -112,8 +112,8 @@ public class Histogram extends JFrame {
         });
     }
     
+    
     /**
-     * 
      * Puts a histogram on the screen.
      * @param data The values in the histogram.
      * @param numBins The number of bins.
@@ -123,6 +123,7 @@ public class Histogram extends JFrame {
     public static void factory(double[] data, int numBins, String title, String xAxis){
         factory(data, numBins, title, xAxis, null);
     }
+    
     
     /**
      * Main method for testing the Histogram class.
