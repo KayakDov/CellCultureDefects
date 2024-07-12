@@ -1,7 +1,5 @@
 package main;
 
-import Animation.DrawDefects;
-import Animation.DrawDefects;
 import ReadWrite.SpreadsheetReadManager;
 import Annalysis.BirthAndDeathTracker;
 import GeometricTools.Rectangle;
@@ -35,7 +33,7 @@ public class Main {
         if (ap instanceof ArgsCreatePictures) {
             PairReadManager prm = PairReadManager.defaultFileFormat(ap.readFrom);
             Stream<PairSnDef> pairs = prm.pairSetContainingLine(((ArgsCreatePictures)ap).targetRow);
-            DrawDefects.drawDefectPairs(100, 800, 800, ap.writeTo, pairs.toList());
+//            DrawDefects.drawDefectPairs(100, 800, 800, ap.writeTo, pairs.toList());  TODO: This may need to be uncomented.
             
         } else {
             ArgsReadSnapsWritePairs argsForSnaps = (ArgsReadSnapsWritePairs)ap;
@@ -81,12 +79,12 @@ public class Main {
 
         DefectManager dm = DefaultData.bacteria();//(time, dist);
                 
-        new DrawDefects(1600, 1600, 100).draw(
-                new File("/home/edov/projects/CreationFusionCount/CreationFusion/images/output/output"), 
-                new Rectangle(900, 0, 900, 900), 
-                new File("/home/edov/projects/VictorData/HBEC/s2(120-919)/Trans__605.tif"),
-                dm.snaps().filter(snap -> snap.loc.getTime() == 604).toArray(SnapDefect[]::new)
-        );
+//        new DrawDefects(1600, 1600, 100).draw(
+//                new File("/home/edov/projects/CreationFusionCount/CreationFusion/images/output/output"), 
+//                new Rectangle(900, 0, 900, 900), 
+//                new File("/home/edov/projects/VictorData/HBEC/s2(120-919)/Trans__605.tif"),
+//                dm.snaps().filter(snap -> snap.loc.getTime() == 604).toArray(SnapDefect[]::new)
+//        );
         
 //        new BirthAndDeathTracker(dm).negTailAngleAtDeath(50);
         
@@ -103,8 +101,8 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
 
-
-        defaults();
+        System.out.println("main.Main.main()");
+//        defaults();
 //        parseArgs(ArgsCreatePictures.defaultPictureCreationArgs());
 //        parseArgs(args);
     }

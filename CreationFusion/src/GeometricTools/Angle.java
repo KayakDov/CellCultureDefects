@@ -15,34 +15,37 @@ public class Angle {
      * The length around the circle.  For regular unit circles this is by default set
      * to 2pi.  For nematic angles this should be pi.
      */
-    private final double circ = Math.PI * 2;
+    private final double circ;
     
     /**
      * Places an angle between 0 and 2pi.
      * @param posOrNegRadians An angle that may be positive or negative.
+     * @param circ The circumference of the circle.  This should be 2pi for 
+     * regular angles and pi for nematic directors.
      */
-    public Angle(double posOrNegRadians) {
+    protected Angle(double posOrNegRadians, double circ) {
+        this.circ = circ;
         if (posOrNegRadians >= circ) angle = posOrNegRadians % circ;
         else if (posOrNegRadians < 0)angle =  circ + posOrNegRadians % circ;
         else angle = posOrNegRadians;
     }
-    
     /**
-     * Constructs an angle from the x and y coordinates of a vector.
-     * @param x
-     * @param y 
+     * Places an angle between 0 and 2pi.
+     * @param posOrNegRadians An angle that may be positive or negative.
+     
      */
-    public Angle(double x, double y){
-        this(Math.atan2(y, x));
+    public Angle(double posOrNegRadians) {
+        this(posOrNegRadians, 2*Math.PI);
     }
     
     /**
      * Constructs an angle from the x and y coordinates of a vector.
      * @param vec 
      */
-    public Angle(Vec vec){
-        this(vec.getX(), vec.getY());
+    public Angle(Vec x){
+        this(Math.atan2(x.getX(), x.getY()));
     }
+    
     
     /**
      * This angle in radians.
@@ -110,7 +113,7 @@ public class Angle {
      * @return The arc distance between the two angles.
      */
     public double arcDist(Angle ang){
-        return modDif(rad(), ang.rad(), 2* Math.PI);
+        return modDif(rad(), ang.rad(), circ);
     }
     
     /**
