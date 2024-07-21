@@ -13,7 +13,7 @@ public class Rectangle {
     double nearEdge;
 //    public final Vec minCorner;
 
-    private LineSegment xSeg, ySeg;
+    private Interval xSeg, ySeg;
     /**
      * The dimensions of the rectangle.
      * @param x The beginning of the x-axis interval.
@@ -32,14 +32,12 @@ public class Rectangle {
      * @param xSeg The x interval.
      * @param ySeg The y interval.
      */
-    public Rectangle(double nearEdge, LineSegment xSeg, LineSegment ySeg) {
+    public Rectangle(double nearEdge, Interval xSeg, Interval ySeg) {
         this.nearEdge = nearEdge;
         this.xSeg = xSeg;
         this.ySeg = ySeg;
     }
-    
-    
-    
+            
     /**
      * The dimensions of the rectangle.
      * @param x The beginning of the x-axis interval.
@@ -52,6 +50,15 @@ public class Rectangle {
     }
     
     /**
+     * The dimensions of the rectangle.
+     * @param width The length of the x-axis interval.
+     * @param height The length of the y-axis interval.
+     */
+    public Rectangle(double width, double height) {
+        this(0, 0, width, height);
+    }
+    
+    /**
      * 
      * @param loc
      * @param width
@@ -60,8 +67,8 @@ public class Rectangle {
      */
     public Rectangle(Vec loc, double width, double height, double nearEdge) {
         
-        xSeg = new LineSegment(loc.getX(), loc.getX() + width);
-        ySeg = new LineSegment(loc.getY(), loc.getY() + height);
+        xSeg = new Interval(loc.getX(), loc.getX() + width);
+        ySeg = new Interval(loc.getY(), loc.getY() + height);
         this.nearEdge = nearEdge;
     }
     
@@ -81,8 +88,8 @@ public class Rectangle {
      * @param nearEdge What constitutes being near the edge of the rectangle.
      */
     public Rectangle(double nearEdge) {
-        xSeg = new LineSegment();
-        ySeg = new LineSegment();
+        xSeg = new Interval();
+        ySeg = new Interval();
         this.nearEdge = nearEdge;
     }
     

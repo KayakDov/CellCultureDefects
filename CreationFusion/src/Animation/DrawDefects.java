@@ -1,6 +1,6 @@
 package Animation;
 
-import GeometricTools.LineSegment;
+import GeometricTools.Interval;
 import GeometricTools.Rectangle;
 import GeometricTools.Vec;
 import SnapManagement.PairSnDef;
@@ -37,7 +37,7 @@ public class DrawDefects {
      * @param diameter The diameter of the image
      */
     public DrawDefects(int width, int height, int diameter) {
-        frame = new Rectangle(0, 0, width, height);
+        frame = new Rectangle(width, height);
         this.diameter = diameter;
     }
 

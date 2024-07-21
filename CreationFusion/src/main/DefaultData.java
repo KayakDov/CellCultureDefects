@@ -25,6 +25,10 @@ public class DefaultData {
         return new DefectManager("plusMinusTMs//14_15_19", cellWindow, cellProximity, cellProximity.rTime * 2).setName("cells_14_15_19");
     }
     
+    public static DefectManager cells_HBEC_s2() {
+        return new DefectManager("plusMinusTMs//HBEC", cellWindow, cellProximity, cellProximity.rTime * 2).setName("HBEC");
+    }
+    
     public static DefectManager allCells_1_10_11_12_14_15_19() {
         return cells_1_10_11_12().mergeIn(cells_14_15_19()).setName("Cells");
     }

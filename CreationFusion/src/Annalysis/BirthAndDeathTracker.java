@@ -38,7 +38,7 @@ public class BirthAndDeathTracker {
      * @param isBirth True for twins and false for spouses.
      * @param maxDist The maximum distance between the paired defects.
      */
-    public void angleNearFusion(boolean isBirth, int maxDist) {
+    public void angleNearEvent(boolean isBirth, int maxDist) {
         
         var pairs = dm.pairsAtDistance(pair -> pair.anglePRel().deg(), isBirth, maxDist);
         HeatMap.factory(
@@ -68,7 +68,7 @@ public class BirthAndDeathTracker {
      */
     public void phaseNearFusion(boolean birth) {
         HeatMap.factory(
-                "mpPhase as a function of distance",
+                dm.getName() + ": mpPhase as a function of distance",
                 "distance",
                 "mpPhase",
                 dm.pairsAtDistance(pair -> pair.mpPhase(), birth, 60),

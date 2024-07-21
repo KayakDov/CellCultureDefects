@@ -77,7 +77,7 @@ public class Main {
      */
     public static void defaults() throws IOException {
 
-        DefectManager dm = DefaultData.bacteria();//(time, dist);
+        DefectManager dm = DefaultData.cells_HBEC_s2();//(time, dist);
                 
 //        new DrawDefects(1600, 1600, 100).draw(
 //                new File("/home/edov/projects/CreationFusionCount/CreationFusion/images/output/output"), 
@@ -86,7 +86,7 @@ public class Main {
 //                dm.snaps().filter(snap -> snap.loc.getTime() == 604).toArray(SnapDefect[]::new)
 //        );
         
-//        new BirthAndDeathTracker(dm).negTailAngleAtDeath(50);
+        new BirthAndDeathTracker(dm).phaseNearFusion(dm.DEATH);
         
         
 //        try (FormatedFileWriter ffw = new DefaultWriter("BacteriaPairs.csv")) {
@@ -101,8 +101,8 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
 
-        System.out.println("main.Main.main()");
-//        defaults();
+//        System.out.println("main.Main.main()");
+        defaults();
 //        parseArgs(ArgsCreatePictures.defaultPictureCreationArgs());
 //        parseArgs(args);
     }
